@@ -3,7 +3,7 @@ import io
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import urllib.parse
 import urllib.request
 
@@ -109,42 +109,41 @@ def get_egypt_datetime():
 # 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
 
-# 🖼️ دالة توليد صورة بطاقة A4 جاهزة للطباعة بشكل برمي نظيف 100%
+# 🖼️ دالة توليد صورة بطاقة A4 مع الشعار والباركود بدقة عالية
 @st.cache_data(ttl=3600)
 def generate_a4_card(app_url_str, logo_file_path):
-    # إنشاء صورة بنسب ورقة A4 (800 × 1130 بكسل)
-    card = Image.new("RGB", (800, 1130), color="#FFFFFF")
+    card = Image.new("RGB", (1000, 1400), color="#FFFFFF")
     draw = ImageDraw.Draw(card)
     
     # الإطار الكحلي الخارجي والذهبي الداخلي
-    draw.rectangle([(25, 25), (775, 1105)], outline="#10233F", width=8)
-    draw.rectangle([(35, 35), (765, 1095)], outline="#C9A227", width=3)
+    draw.rectangle([(30, 30), (970, 1370)], outline="#10233F", width=10)
+    draw.rectangle([(45, 45), (955, 1355)], outline="#C9A227", width=4)
     
-    y_offset = 60
+    y_offset = 70
     # 1. رسم الشعار الرسمي إن وجد
     if logo_file_path and os.path.exists(logo_file_path):
         try:
             logo = Image.open(logo_file_path).convert("RGBA")
-            logo.thumbnail((180, 180))
-            logo_x = (800 - logo.width) // 2
+            logo.thumbnail((220, 220))
+            logo_x = (1000 - logo.width) // 2
             card.paste(logo, (logo_x, y_offset), logo)
-            y_offset += logo.height + 30
+            y_offset += logo.height + 40
         except Exception:
-            y_offset += 30
+            y_offset += 40
     else:
-        y_offset += 30
+        y_offset += 40
 
     # 2. جلب الـ QR Code وعرضه بحجم ممتاز للطباعة
     encoded_url = urllib.parse.quote(app_url_str)
-    qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
+    qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=600x600&data={encoded_url}&color=10233F"
     
     try:
         req = urllib.request.urlopen(qr_api_url)
         qr_bytes_data = req.read()
         qr_img = Image.open(io.BytesIO(qr_bytes_data)).convert("RGB")
-        qr_x = (800 - qr_img.width) // 2
+        qr_x = (1000 - qr_img.width) // 2
         card.paste(qr_img, (qr_x, y_offset + 30))
     except Exception:
         pass
@@ -281,19 +280,23 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة طباعة وتنزيل بطاقة الـ QR (مضمونة 100%)
+# 2️⃣ صفحة طباعة وتنزيل بطاقة الـ QR بفرع الجيزة
 # ==========================================
 elif page == "🖨️ طباعة/تنزيل بطاقة QR":
-    st.markdown("<h3 style='text-align: center; color: #10233F;'>📥 بطاقة الباركود الرسمية المخصصة للطباعة</h3>", unsafe_allow_html=True)
-    st.info("💡 يمكنك اضغط على زر 'تحميل بطاقة الباركود عالية الدقة' أدناه لطباعتها فوراً على ورقة A4 أو حفظها كصورة.")
-    
-    card_bytes = generate_a4_card(app_url, logo_path)
+    st.markdown("""
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <h2 style='color: #10233F; margin-bottom: 5px;'>الأكاديمية المهنية للمعلمين</h2>
+            <h3 style='color: #C9A227; margin-top: 0;'>📍 فرع الجيزة</h3>
+            <h4 style='color: #10233F;'>📋 بطاقة تسجيل الحضور اليومي الرسمية</h4>
+        </div>
+    """, unsafe_allow_html=True)
     
     col_c1, col_c2, col_c3 = st.columns([1, 2, 1])
     with col_c2:
+        card_bytes = generate_a4_card(app_url, logo_path)
         st.image(card_bytes, use_container_width=True)
         st.download_button(
-            label="📄 تحميل بطاقة الباركود للطباعة (PNG عالي الدقة)",
+            label="📄 تحميل بطاقة الباركود لفرع الجيزة للطباعة (A4)",
             data=card_bytes,
             file_name="Giza_Academy_QR_A4.png",
             mime="image/png"
