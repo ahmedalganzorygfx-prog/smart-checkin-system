@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط RTL وتنسيق صفحة الطباعة A4
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والطباعة
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -122,7 +122,7 @@ def get_egypt_datetime():
 # 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -255,28 +255,29 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
 # 2️⃣ صفحة طباعة بطاقة الـ QR بملء الورقة A4
 # ==========================================
 elif page == "🖨️ طباعة بطاقة QR (A4)":
-    st.info("💡 اضغط خيار الطباعة من المتصفح (أو Ctrl + P) لطباعة البطاقة مباشرة على ورقة A4.")
+    st.info("💡 لطباعة هذه البطاقة الرسمية، يمكنك استخدام خيار الطباعة المباشر من المتصفح (أو الضغط على Ctrl + P من الكمبيوتر).")
     
-    st.markdown(f"""
-        <div style="border: 8px solid #10233F; padding: 40px; border-radius: 25px; text-align: center; background-color: #ffffff; margin: 0 auto; max-width: 750px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); direction: rtl; font-family: 'Segoe UI', Tahoma, sans-serif;">
-            <div style="border: 4px solid #C9A227; border-radius: 20px; padding: 25px; background-color: #ffffff; margin-bottom: 30px;">
-                <div style="background-color: #10233F; color: #ffffff; padding: 18px; border-radius: 12px; font-weight: bold; font-size: 28px; letter-spacing: 1px;">
-                    تسجيل حضور المعلمين اليومي 📋
-                </div>
-                <div style="color: #C9A227; font-weight: 900; font-size: 26px; margin-top: 15px;">
-                    فرع الجيزة
-                </div>
+    card_html = f"""
+    <div style="border: 8px solid #10233F; padding: 40px; border-radius: 25px; text-align: center; background-color: #ffffff; margin: 0 auto; max-width: 750px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); direction: rtl; font-family: 'Segoe UI', Tahoma, sans-serif;">
+        <div style="border: 4px solid #C9A227; border-radius: 20px; padding: 25px; background-color: #ffffff; margin-bottom: 30px;">
+            <div style="background-color: #10233F; color: #ffffff; padding: 18px; border-radius: 12px; font-weight: bold; font-size: 28px;">
+                تسجيل حضور المعلمين اليومي 📋
             </div>
-            
-            <div style="background-color: #ffffff; padding: 20px; border-radius: 25px; display: inline-block; border: 2px dashed #10233F;">
-                <img src="{qr_image_url}" style="width: 380px; height: 380px; display: block; margin: 0 auto;">
-            </div>
-            
-            <div style="color: #555555; font-size: 20px; font-weight: bold; margin-top: 30px;">
-                📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
+            <div style="color: #C9A227; font-weight: 900; font-size: 26px; margin-top: 15px;">
+                فرع الجيزة
             </div>
         </div>
-    """, unsafe_allow_html=True)
+        
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 25px; display: inline-block; border: 2px dashed #10233F;">
+            <img src="{qr_image_url}" style="width: 380px; height: 380px; display: block; margin: 0 auto; border-radius: 10px;">
+        </div>
+        
+        <div style="color: #555555; font-size: 20px; font-weight: bold; margin-top: 30px;">
+            📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
+        </div>
+    </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
 
 # ==========================================
 # 3️⃣ صفحة لوحة تحكم الإدارة
