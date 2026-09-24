@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 from PIL import Image
-import qrcode
+import urllib.parse
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
 logo_path = None
@@ -97,21 +97,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 📲 دالة توليد رمز QR ديناميكياً
-def generate_qr_code(url):
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=2,
-    )
-    qr.add_data(url)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="#10233F", back_color="white")
-    
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return buf.getvalue()
+# 📲 رابط توليد الـ QR بدون حزم إضافية
+def get_qr_url(url):
+    encoded_url = urllib.parse.quote(url)
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encoded_url}&color=10233F"
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -158,23 +147,16 @@ def load_data():
 
 df_existing = load_data()
 
-# 📌 6. القائمة الجانبية للتنقل عرض الـ QR
+# 📌 6. القائمة الجانبية للتنقل وعرض الـ QR
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
 st.sidebar.divider()
 st.sidebar.markdown("### 📲 رمز QR الخاص بالفرع")
-# يمكنك استبدال الرابط أدناه برابط التطبيق النظير الخاص بك على Streamlit Cloud
-app_url = "https://giza-teachers-checkin.streamlit.app"
-qr_bytes = generate_qr_code(app_url)
+app_url = "https://smart-checkin-system.streamlit.app"
+qr_image_url = get_qr_url(app_url)
 
-st.sidebar.image(qr_bytes, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
-st.sidebar.download_button(
-    label="📥 تحميل QR Code للطباعة",
-    data=qr_bytes,
-    file_name="giza_academy_qr.png",
-    mime="image/png"
-)
+st.sidebar.image(qr_image_url, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
 
 # ==========================================
 # 1️⃣ صفحة تسجيل دخول المعلم (عرض الـ QR في الواجهة)
@@ -212,7 +194,7 @@ if page == "📝 تسجيل دخول معلم":
                 <p style="font-size: 12px; color: #666;">للتسجيل المباشر من هاتف المعلم</p>
             </div>
         """, unsafe_allow_html=True)
-        st.image(qr_bytes, use_container_width=True)
+        st.image(qr_image_url, use_container_width=True)
 
     if submit_button:
         if not teacher_id or not teacher_name or not national_id:
