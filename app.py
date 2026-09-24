@@ -3,7 +3,7 @@ import io
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import urllib.parse
 import urllib.request
 
@@ -24,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والتوسيط المريح
+# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط المريح والطباعة على A4
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -98,6 +98,26 @@ st.markdown("""
         width: 100%;
         font-weight: bold;
     }
+
+    /* إعدادات صفحة الطباعة على ورق A4 عند الضغط على أزرار الطباعة */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #print-a4-area, #print-a4-area * {
+            visibility: visible;
+        }
+        #print-a4-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -109,50 +129,9 @@ def get_egypt_datetime():
 # 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=350x350&data={encoded_url}&color=10233F"
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
 
-# 🖨️ دالة إنشاء بطاقة باركود رسمية جاهزة للطباعة عالي الجودة
-@st.cache_data(ttl=3600)
-def generate_printable_card(app_url_str, logo_file_path):
-    card = Image.new("RGB", (800, 1050), color="#FFFFFF")
-    draw = ImageDraw.Draw(card)
-    
-    # رسم الإطار الخارجي الأنيق
-    draw.rectangle([(20, 20), (780, 1030)], outline="#10233F", width=8)
-    draw.rectangle([(30, 30), (770, 1020)], outline="#C9A227", width=3)
-    
-    y_offset = 50
-    # 1. رسم الشعار في الأعلى
-    if logo_file_path and os.path.exists(logo_file_path):
-        try:
-            logo = Image.open(logo_file_path).convert("RGBA")
-            logo.thumbnail((180, 180))
-            logo_x = (800 - logo.width) // 2
-            card.paste(logo, (logo_x, y_offset), logo)
-            y_offset += logo.height + 25
-        except Exception:
-            y_offset += 30
-    else:
-        y_offset += 30
-
-    # 2. جلب ورسم الـ QR Code عالي الدقة في المنتصف
-    encoded_url = urllib.parse.quote(app_url_str)
-    qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
-    
-    try:
-        req = urllib.request.urlopen(qr_api_url)
-        qr_bytes_data = req.read()
-        qr_img = Image.open(io.BytesIO(qr_bytes_data)).convert("RGB")
-        qr_x = (800 - qr_img.width) // 2
-        card.paste(qr_img, (qr_x, y_offset + 20))
-    except Exception:
-        pass
-        
-    buf = io.BytesIO()
-    card.save(buf, format="PNG")
-    return buf.getvalue()
-
-# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية وعنوان التسجيل اليومي)
+# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
     if logo_path:
@@ -168,7 +147,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 📂 5. دالة تنظيف البيانات وتنقيتها بالأعمدة الأساسية المطلوبة
+# 📂 5. دالة تنظيف البيانات وتنقيتها
 EXCEL_FILE = "attendance.xlsx"
 EXPECTED_COLUMNS = [
     "كود المعلم",
@@ -198,7 +177,7 @@ def load_data():
 
 df_existing = load_data()
 
-# 📌 6. القائمة الجانبية للتنقل وعرض رمز الـ QR والبطاقة المخصصة
+# 📌 6. القائمة الجانبية للتنقل وعرض رمز الـ QR وتوفير بطاقة الطباعة A4
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل حضور المعلمين اليومي", "🔒 لوحة تحكم الإدارة"])
 
@@ -211,29 +190,34 @@ try:
 except Exception:
     app_url = "https://smart-checkin-system.streamlit.app"
 
-# عرض بطاقة HTML أنيقة بالقائمة الجانبية مع إتاحة طباعتها/تنزيلها
-st.sidebar.markdown("""
-    <div style="border: 2px solid #C9A227; border-radius: 12px; padding: 10px; text-align: center; background-color: #ffffff; margin-bottom: 12px;">
-        <div style="background-color: #10233F; color: #ffffff; padding: 6px; border-radius: 8px; font-weight: bold; font-size: 14px;">
-            📋 تسجيل حضور المعلمين اليومي
+qr_image_url = get_qr_url(app_url)
+
+# عرض التصميم المطابق بالدقة للصورة في القائمة الجانبية
+st.sidebar.markdown(f"""
+    <div id="print-a4-area" style="background-color: #f5f7fa; padding: 25px; border-radius: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, sans-serif; direction: rtl;">
+        <div style="border: 3px solid #C9A227; border-radius: 18px; padding: 15px; background-color: #ffffff; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <div style="background-color: #10233F; color: #ffffff; padding: 12px 10px; border-radius: 10px; font-weight: bold; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>تسجيل حضور المعلمين اليومي</span> 📋
+            </div>
+            <div style="color: #C9A227; font-weight: bold; font-size: 15px; margin-top: 10px;">
+                فرع الجيزة
+            </div>
         </div>
-        <div style="color: #C9A227; font-size: 13px; font-weight: bold; margin-top: 5px;">فرع الجيزة</div>
+        <div style="background-color: #ffffff; padding: 15px; border-radius: 20px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <img src="{qr_image_url}" style="width: 260px; height: 260px; border-radius: 10px; display: block; margin: 0 auto;">
+        </div>
+        <div style="color: #888888; font-size: 14px; font-weight: bold; margin-top: 18px;">
+            امسح الرمز بهاتف المعلم للتسجيل المباشر
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
-qr_image_url = get_qr_url(app_url)
-st.sidebar.image(qr_image_url, caption="امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
-
-try:
-    card_bytes = generate_printable_card(app_url, logo_path)
-    st.sidebar.download_button(
-        label="🖨️ تنزيل وطباعة بطاقة الباركود",
-        data=card_bytes,
-        file_name="Giza_Academy_QR_Print.png",
-        mime="image/png"
-    )
-except Exception:
-    pass
+# زر طباعة مباشر لطباعة الورقة A4 بكل سهولة بالمتصفح
+st.sidebar.markdown("""
+    <button onclick="window.print()" style="width: 100%; background-color: #10233F; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px;">
+        🖨️ طباعة الـ QR على ورقة A4
+    </button>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # 1️⃣ صفحة تسجيل حضور المعلمين اليومي
