@@ -13,7 +13,6 @@ if os.path.exists("Logo.png"):
 elif os.path.exists("logo.png"):
     logo_path = "logo.png"
 
-# استخدام الصورة كأيقونة للتبويب إن وجدت، أو الإيموجي كبديل
 page_icon_val = Image.open(logo_path) if logo_path else "🏫"
 
 # ⚙️ 2. ضبط إعدادات الصفحة
@@ -24,29 +23,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والعرض المريح على كافة الأجهزة
+# 🎨 3. تنسيقات CSS الآمنة لمنع انهيار القائمة الجانبية على الهواتف
 st.markdown("""
     <style>
-    /* ضبط اتجاه الصفحة بالكامل لتكون RTL */
-    html, body, [data-testid="stAppViewContainer"] {
+    /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
+    .stMainBlockContainer, [data-testid="stForm"] {
         direction: rtl;
         text-align: right;
     }
     
-    /* ضبط اتجاه القائمة الجانبية بشكل متناسق ومنع كسر الحروف */
-    [data-testid="stSidebar"] {
-        direction: rtl;
-        text-align: right;
-    }
-    
-    [data-testid="stSidebar"] * {
-        direction: rtl;
-    }
-    
-    /* محاذاة حقول الإدخال */
-    .stTextInput input {
+    /* محاذاة عناصر الإدخال لليمين */
+    .stTextInput input, .stDateInput input {
         text-align: right !important;
         direction: rtl !important;
+    }
+    
+    /* تنسيق القائمة الجانبية دون الـ RTL القسري لعدم كسر العرض */
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
+        text-align: right;
     }
     
     /* توسيط عنصر الهيدر بالكامل */
@@ -113,10 +107,9 @@ st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم (موسّطة)
+# 1️⃣ صفحة تسجيل دخول المعلم
 # ==========================================
 if page == "📝 تسجيل دخول معلم":
-    # عنوان الصفحة والعبارة الترحيبية في منتصف الصفحة
     st.markdown("""
         <div style="text-align: center; margin-bottom: 25px;">
             <h2 style="color: #10233F; margin-bottom: 8px;">📝 تسجيل حضور المعلمين بالمقر</h2>
