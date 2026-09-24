@@ -24,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والطباعة على A4
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -98,6 +98,26 @@ st.markdown("""
         width: 100%;
         font-weight: bold;
     }
+
+    /* إعدادات الطباعة المخصصة لورق A4 */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .print-a4-card, .print-a4-card * {
+            visibility: visible;
+        }
+        .print-a4-card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -111,18 +131,16 @@ def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
     return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
 
-# 🖼️ دالة توليد صورة بطاقة A4 مع الشعار والباركود بدقة عالية
+# 🖼️ دالة توليد بطاقة A4 ناعمة
 @st.cache_data(ttl=3600)
 def generate_a4_card(app_url_str, logo_file_path):
     card = Image.new("RGB", (1000, 1400), color="#FFFFFF")
     draw = ImageDraw.Draw(card)
     
-    # الإطار الكحلي الخارجي والذهبي الداخلي
     draw.rectangle([(30, 30), (970, 1370)], outline="#10233F", width=10)
     draw.rectangle([(45, 45), (955, 1355)], outline="#C9A227", width=4)
     
     y_offset = 70
-    # 1. رسم الشعار الرسمي إن وجد
     if logo_file_path and os.path.exists(logo_file_path):
         try:
             logo = Image.open(logo_file_path).convert("RGBA")
@@ -135,7 +153,6 @@ def generate_a4_card(app_url_str, logo_file_path):
     else:
         y_offset += 40
 
-    # 2. جلب الـ QR Code وعرضه بحجم ممتاز للطباعة
     encoded_url = urllib.parse.quote(app_url_str)
     qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=600x600&data={encoded_url}&color=10233F"
     
@@ -202,7 +219,7 @@ df_existing = load_data()
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio(
     "اختر الصفحة:", 
-    ["📝 تسجيل حضور المعلمين اليومي", "🖨️ طباعة/تنزيل بطاقة QR", "🔒 لوحة تحكم الإدارة"]
+    ["📝 تسجيل حضور المعلمين اليومي", "🖨️ طباعة/تنزيل بطاقة QR (A4)", "🔒 لوحة تحكم الإدارة"]
 )
 
 try:
@@ -280,25 +297,44 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة طباعة وتنزيل بطاقة الـ QR بفرع الجيزة
+# 2️⃣ صفحة طباعة وتنزيل بطاقة الـ QR بفرع الجيزة (كاملة العناوين)
 # ==========================================
-elif page == "🖨️ طباعة/تنزيل بطاقة QR":
-    st.markdown("""
-        <div style='text-align: center; margin-bottom: 20px;'>
-            <h2 style='color: #10233F; margin-bottom: 5px;'>الأكاديمية المهنية للمعلمين</h2>
-            <h3 style='color: #C9A227; margin-top: 0;'>📍 فرع الجيزة</h3>
-            <h4 style='color: #10233F;'>📋 بطاقة تسجيل الحضور اليومي الرسمية</h4>
+elif page == "🖨️ طباعة/تنزيل بطاقة QR (A4)":
+    st.info("💡 اضغط خيار الطباعة بالمتصفح (أو Ctrl + P) لطباعة الورقة الرسمية A4 مباشرة.")
+    
+    # عرض بطاقة A4 رسمية بمتصفح الويب كاملة مع الخطوط والعناوين
+    st.markdown(f"""
+        <div class="print-a4-card" style="border: 8px solid #10233F; padding: 35px; border-radius: 25px; text-align: center; background-color: #ffffff; margin: 0 auto; max-width: 750px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); direction: rtl; font-family: 'Segoe UI', Tahoma, sans-serif;">
+            
+            <div style="margin-bottom: 20px;">
+                <h1 style="color: #10233F; margin: 0; font-size: 28px; font-weight: bold;">الأكاديمية المهنية للمعلمين</h1>
+                <h2 style="color: #C9A227; margin: 5px 0 0 0; font-size: 26px; font-weight: 900;">📍 فرع الجيزة</h2>
+            </div>
+            
+            <div style="border: 3px solid #C9A227; border-radius: 18px; padding: 15px; background-color: #F8F9FA; margin-bottom: 25px;">
+                <div style="background-color: #10233F; color: #ffffff; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 22px;">
+                    📋 تسجيل حضور المعلمين اليومي
+                </div>
+            </div>
+            
+            <div style="background-color: #ffffff; padding: 20px; border-radius: 20px; display: inline-block; border: 2px dashed #10233F;">
+                <img src="{qr_image_url}" style="width: 350px; height: 350px; display: block; margin: 0 auto;">
+            </div>
+            
+            <div style="color: #444444; font-size: 18px; font-weight: bold; margin-top: 25px;">
+                📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
+            </div>
         </div>
     """, unsafe_allow_html=True)
-    
-    col_c1, col_c2, col_c3 = st.columns([1, 2, 1])
-    with col_c2:
+
+    st.write("")
+    col_dl1, col_dl2, col_dl3 = st.columns([1, 2, 1])
+    with col_dl2:
         card_bytes = generate_a4_card(app_url, logo_path)
-        st.image(card_bytes, use_container_width=True)
         st.download_button(
-            label="📄 تحميل بطاقة الباركود لفرع الجيزة للطباعة (A4)",
+            label="📥 تنزيل صورة الـ QR لفرع الجيزة (PNG)",
             data=card_bytes,
-            file_name="Giza_Academy_QR_A4.png",
+            file_name="Giza_Academy_QR_Card.png",
             mime="image/png"
         )
 
