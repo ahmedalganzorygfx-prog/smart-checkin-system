@@ -3,9 +3,8 @@ import io
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
-from PIL import Image, ImageDraw
+from PIL import Image
 import urllib.parse
-import urllib.request
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
 logo_path = None
@@ -24,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط والطباعة
+# 🎨 3. تنسيقات CSS لضبط RTL وتنسيق صفحة الطباعة A4
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -99,17 +98,17 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* إعدادات الطباعة على A4 */
+    /* إعدادات الطباعة المخصصة A4 */
     @media print {
-        [data-testid="stSidebar"] {
+        [data-testid="stSidebar"], header, footer {
             display: none !important;
         }
-        header, footer {
-            display: none !important;
+        .stApp {
+            background-color: white !important;
         }
         @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 5mm;
         }
     }
     </style>
@@ -123,7 +122,7 @@ def get_egypt_datetime():
 # 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -171,12 +170,12 @@ def load_data():
 
 df_existing = load_data()
 
-# 📌 6. القائمة الجانبية للتنقل وعرض رمز الـ QR وتوفير بطاقة الطباعة A4
+# 📌 6. القائمة الجانبية للتنقل
 st.sidebar.title("📌 القائمة الرئيسية")
-page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل حضور المعلمين اليومي", "🔒 لوحة تحكم الإدارة"])
-
-st.sidebar.divider()
-st.sidebar.markdown("### 📲 باركود التسجيل بالفرع")
+page = st.sidebar.radio(
+    "اختر الصفحة:", 
+    ["📝 تسجيل حضور المعلمين اليومي", "🖨️ طباعة بطاقة QR (A4)", "🔒 لوحة تحكم الإدارة"]
+)
 
 try:
     current_host = st.context.headers.get("Host", "smart-checkin-system.streamlit.app")
@@ -185,35 +184,6 @@ except Exception:
     app_url = "https://smart-checkin-system.streamlit.app"
 
 qr_image_url = get_qr_url(app_url)
-
-# عرض التصميم
-st.sidebar.markdown(f"""
-    <div style="background-color: #f5f7fa; padding: 20px; border-radius: 18px; text-align: center; font-family: sans-serif; direction: rtl;">
-        <div style="border: 3px solid #C9A227; border-radius: 15px; padding: 12px; background-color: #ffffff; margin-bottom: 15px;">
-            <div style="background-color: #10233F; color: #ffffff; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 15px;">
-                تسجيل حضور المعلمين اليومي 📋
-            </div>
-            <div style="color: #C9A227; font-weight: bold; font-size: 14px; margin-top: 8px;">
-                فرع الجيزة
-            </div>
-        </div>
-        <div style="background-color: #ffffff; padding: 10px; border-radius: 15px; display: inline-block;">
-            <img src="{qr_image_url}" style="width: 220px; height: 220px; border-radius: 8px; display: block; margin: 0 auto;">
-        </div>
-        <div style="color: #666666; font-size: 13px; font-weight: bold; margin-top: 12px;">
-            امسح الرمز بهاتف المعلم للتسجيل المباشر
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-st.sidebar.write("")
-
-# 🖨️ زر الطباعة المصلح لاستدعاء النافذة الرئيسية
-st.sidebar.markdown("""
-    <button onclick="window.parent.print()" style="width: 100%; background-color: #10233F; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 8px;">
-        🖨️ طباعة الـ QR الآن
-    </button>
-""", unsafe_allow_html=True)
 
 # ==========================================
 # 1️⃣ صفحة تسجيل حضور المعلمين اليومي
@@ -282,7 +252,34 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة
+# 2️⃣ صفحة طباعة بطاقة الـ QR بملء الورقة A4
+# ==========================================
+elif page == "🖨️ طباعة بطاقة QR (A4)":
+    st.info("💡 اضغط خيار الطباعة من المتصفح (أو Ctrl + P) لطباعة البطاقة مباشرة على ورقة A4.")
+    
+    st.markdown(f"""
+        <div style="border: 8px solid #10233F; padding: 40px; border-radius: 25px; text-align: center; background-color: #ffffff; margin: 0 auto; max-width: 750px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); direction: rtl; font-family: 'Segoe UI', Tahoma, sans-serif;">
+            <div style="border: 4px solid #C9A227; border-radius: 20px; padding: 25px; background-color: #ffffff; margin-bottom: 30px;">
+                <div style="background-color: #10233F; color: #ffffff; padding: 18px; border-radius: 12px; font-weight: bold; font-size: 28px; letter-spacing: 1px;">
+                    تسجيل حضور المعلمين اليومي 📋
+                </div>
+                <div style="color: #C9A227; font-weight: 900; font-size: 26px; margin-top: 15px;">
+                    فرع الجيزة
+                </div>
+            </div>
+            
+            <div style="background-color: #ffffff; padding: 20px; border-radius: 25px; display: inline-block; border: 2px dashed #10233F;">
+                <img src="{qr_image_url}" style="width: 380px; height: 380px; display: block; margin: 0 auto;">
+            </div>
+            
+            <div style="color: #555555; font-size: 20px; font-weight: bold; margin-top: 30px;">
+                📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# ==========================================
+# 3️⃣ صفحة لوحة تحكم الإدارة
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
