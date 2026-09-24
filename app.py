@@ -24,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط المريح والطباعة على A4
+# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط والطباعة
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -99,19 +99,13 @@ st.markdown("""
         font-weight: bold;
     }
 
-    /* إعدادات صفحة الطباعة على ورق A4 عند الضغط على أزرار الطباعة */
+    /* إعدادات الطباعة على A4 */
     @media print {
-        body * {
-            visibility: hidden;
+        [data-testid="stSidebar"] {
+            display: none !important;
         }
-        #print-a4-area, #print-a4-area * {
-            visibility: visible;
-        }
-        #print-a4-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+        header, footer {
+            display: none !important;
         }
         @page {
             size: A4 portrait;
@@ -192,30 +186,32 @@ except Exception:
 
 qr_image_url = get_qr_url(app_url)
 
-# عرض التصميم المطابق بالدقة للصورة في القائمة الجانبية
+# عرض التصميم
 st.sidebar.markdown(f"""
-    <div id="print-a4-area" style="background-color: #f5f7fa; padding: 25px; border-radius: 20px; text-align: center; font-family: 'Segoe UI', Tahoma, sans-serif; direction: rtl;">
-        <div style="border: 3px solid #C9A227; border-radius: 18px; padding: 15px; background-color: #ffffff; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <div style="background-color: #10233F; color: #ffffff; padding: 12px 10px; border-radius: 10px; font-weight: bold; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                <span>تسجيل حضور المعلمين اليومي</span> 📋
+    <div style="background-color: #f5f7fa; padding: 20px; border-radius: 18px; text-align: center; font-family: sans-serif; direction: rtl;">
+        <div style="border: 3px solid #C9A227; border-radius: 15px; padding: 12px; background-color: #ffffff; margin-bottom: 15px;">
+            <div style="background-color: #10233F; color: #ffffff; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 15px;">
+                تسجيل حضور المعلمين اليومي 📋
             </div>
-            <div style="color: #C9A227; font-weight: bold; font-size: 15px; margin-top: 10px;">
+            <div style="color: #C9A227; font-weight: bold; font-size: 14px; margin-top: 8px;">
                 فرع الجيزة
             </div>
         </div>
-        <div style="background-color: #ffffff; padding: 15px; border-radius: 20px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-            <img src="{qr_image_url}" style="width: 260px; height: 260px; border-radius: 10px; display: block; margin: 0 auto;">
+        <div style="background-color: #ffffff; padding: 10px; border-radius: 15px; display: inline-block;">
+            <img src="{qr_image_url}" style="width: 220px; height: 220px; border-radius: 8px; display: block; margin: 0 auto;">
         </div>
-        <div style="color: #888888; font-size: 14px; font-weight: bold; margin-top: 18px;">
+        <div style="color: #666666; font-size: 13px; font-weight: bold; margin-top: 12px;">
             امسح الرمز بهاتف المعلم للتسجيل المباشر
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# زر طباعة مباشر لطباعة الورقة A4 بكل سهولة بالمتصفح
+st.sidebar.write("")
+
+# 🖨️ زر الطباعة المصلح لاستدعاء النافذة الرئيسية
 st.sidebar.markdown("""
-    <button onclick="window.print()" style="width: 100%; background-color: #10233F; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px;">
-        🖨️ طباعة الـ QR على ورقة A4
+    <button onclick="window.parent.print()" style="width: 100%; background-color: #10233F; color: white; padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 15px; cursor: pointer; margin-bottom: 8px;">
+        🖨️ طباعة الـ QR الآن
     </button>
 """, unsafe_allow_html=True)
 
