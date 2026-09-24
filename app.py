@@ -7,7 +7,6 @@ from PIL import Image
 from streamlit_gsheets import GSheetsConnection
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
-# يبحث التطبيق عن صورة الشعار سواء كانت باسم Logo.png أو logo.png
 logo_path = None
 if os.path.exists("Logo.png"):
     logo_path = "Logo.png"
@@ -25,24 +24,29 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL وتوسيط الهيدر والعناوين
+# 🎨 3. تنسيقات CSS المصلحة لضبط RTL والعرض المريح على الهواتف والحواسب
 st.markdown("""
     <style>
-    /* تطبيق اتجاه النص RTL للواجهة كاملة */
-    html, body, [class*="css"], div, h1, h2, h3, h4, h5, h6, p, label, input {
-        direction: rtl !important;
-        text-align: right !important;
+    /* ضبط اتجاه الصفحة بالكامل لتكون RTL */
+    html, body, [data-testid="stAppViewContainer"] {
+        direction: rtl;
+        text-align: right;
     }
     
-    /* ضبط مكان القائمة الجانبية لتكون جهة اليمين */
+    /* ضبط اتجاه القائمة الجانبية بشكل متناسق ومنع كسر الحروف */
     [data-testid="stSidebar"] {
-        direction: rtl !important;
-        text-align: right !important;
+        direction: rtl;
+        text-align: right;
+    }
+    
+    [data-testid="stSidebar"] * {
+        direction: rtl;
     }
     
     /* محاذاة حقول الإدخال */
     .stTextInput input {
         text-align: right !important;
+        direction: rtl !important;
     }
     
     /* توسيط عنصر الهيدر بالكامل */
@@ -54,10 +58,11 @@ st.markdown("""
         border-bottom: 5px solid #10233F;
         margin-bottom: 25px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        direction: rtl;
     }
     
     .academy-title {
-        font-size: 28px !important;
+        font-size: 26px !important;
         font-weight: bold !important;
         color: #10233F !important;
         text-align: center !important;
@@ -65,14 +70,14 @@ st.markdown("""
     }
     
     .branch-title {
-        font-size: 34px !important; /* تكبير خط اسم الفرع */
+        font-size: 30px !important;
         font-weight: 900 !important;
         color: #C9A227 !important;
         text-align: center !important;
         margin-top: 5px !important;
     }
     
-    /* توسيط زر التسجيل */
+    /* ضبط زر التسجيل */
     .stButton button {
         width: 100%;
         font-weight: bold;
