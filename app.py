@@ -22,7 +22,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والعرض المريح على كافة الأجهزة
+# 🎨 3. تنسيقات CSS لضبط RTL وتوسيط العناوين والجدول
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -37,7 +37,7 @@ st.markdown("""
         direction: rtl !important;
     }
     
-    /* تنسيق القائمة الجانبية دون الـ RTL القسري لعدم كسر العرض */
+    /* تنسيق القائمة الجانبية */
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
         text-align: right;
     }
@@ -70,6 +70,15 @@ st.markdown("""
         margin-top: 5px !important;
     }
     
+    /* توسيط عناوين قسم الإدارة وقائمة الحضور */
+    .section-title {
+        text-align: center !important;
+        color: #10233F;
+        font-weight: bold;
+        margin-top: 20px;
+        margin-bottom: 15px;
+    }
+
     /* ضبط زر التسجيل */
     .stButton button {
         width: 100%;
@@ -93,20 +102,35 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 📂 5. التعامل مع ملف Excel
+# 📂 5. دالة تنظيف البيانات وتنقيتها ومنع تكرار الخلايا
 EXCEL_FILE = "attendance.xlsx"
+EXPECTED_COLUMNS = ["كود المعلم", "اسم المعلم", "الرقم القومي", "تاريخ الدخول", "وقت الدخول"]
 
-if os.path.exists(EXCEL_FILE):
-    df_existing = pd.read_excel(EXCEL_FILE, dtype=str)
-else:
-    df_existing = pd.DataFrame(columns=["كود المعلم", "اسم المعلم", "الرقم القومي", "تاريخ الدخول", "وقت الدخول"])
+def load_data():
+    if os.path.exists(EXCEL_FILE):
+        try:
+            df = pd.read_excel(EXCEL_FILE, dtype=str)
+            # إزالة أي أعمدة غير معنونة أو زائدة
+            df = df.loc[:, ~df.columns.str.contains('^Unnamed', na=False)]
+            df = df.dropna(how='all')
+            # التأكد من مطابقة الأعمدة الخمسة الأساسية فقط
+            for col in EXPECTED_COLUMNS:
+                if col not in df.columns:
+                    df[col] = ""
+            return df[EXPECTED_COLUMNS]
+        except Exception:
+            return pd.DataFrame(columns=EXPECTED_COLUMNS)
+    else:
+        return pd.DataFrame(columns=EXPECTED_COLUMNS)
+
+df_existing = load_data()
 
 # 📌 6. القائمة الجانبية للتنقل
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم
+# 1️⃣ صفحة تسجيل دخول المعلم (موسّطة)
 # ==========================================
 if page == "📝 تسجيل دخول معلم":
     st.markdown("""
@@ -132,9 +156,9 @@ if page == "📝 تسجيل دخول معلم":
             current_time = now.strftime("%H:%M:%S")
 
             already_registered = False
-            if not df_existing.empty and "كود المعلم" in df_existing.columns and "تاريخ الدخول" in df_existing.columns:
-                check_record = df_existing[(df_existing["كود المعلم"].astype(str) == str(teacher_id)) & 
-                                         (df_existing["تاريخ الدخول"] == today_date)]
+            if not df_existing.empty:
+                check_record = df_existing[(df_existing["كود المعلم"].astype(str).str.strip() == str(teacher_id).strip()) & 
+                                         (df_existing["تاريخ الدخول"].astype(str) == today_date)]
                 if not check_record.empty:
                     already_registered = True
 
@@ -142,25 +166,26 @@ if page == "📝 تسجيل دخول معلم":
                 st.warning(f"⚠️ أهلاً أستاذ/ة {teacher_name}، لقد تم تسجيل حضورك اليوم بالفعل!")
             else:
                 new_data = pd.DataFrame([{
-                    "كود المعلم": str(teacher_id),
-                    "اسم المعلم": str(teacher_name),
-                    "الرقم القومي": str(national_id) if national_id else "",
+                    "كود المعلم": str(teacher_id).strip(),
+                    "اسم المعلم": str(teacher_name).strip(),
+                    "الرقم القومي": str(national_id).strip() if national_id else "",
                     "تاريخ الدخول": str(today_date),
                     "وقت الدخول": str(current_time)
                 }])
                 
-                # إضافة السجل الجديد وحفظه في ملف Excel
+                # دمج وحفظ البيانات النظيفة فقط
                 updated_df = pd.concat([df_existing, new_data], ignore_index=True)
+                updated_df = updated_df[EXPECTED_COLUMNS]
                 updated_df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
                 
                 st.success(f"✅ تم تسجيل دخولك بنجاح يا أستاذ/ة {teacher_name} الساعة {current_time}!")
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (محمية)
+# 2️⃣ صفحة لوحة تحكم الإدارة (منسقة وموسّطة)
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
-    st.subheader("📊 لوحة تحكم الإدارة - سجل الحضور اليومي")
+    st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
 
     password = st.text_input("🔑 أدخل كلمة السر للدخول إلى لوحة التحكم:", type="password")
 
@@ -173,31 +198,45 @@ elif page == "🔒 لوحة تحكم الإدارة":
         if df_existing.empty:
             st.info("لا توجد أي بيانات مسجلة حتى الآن.")
         else:
-            col1, col2 = st.columns([1, 2])
-            with col1:
+            # الفلترة في المنتصف
+            col_space1, col_filter, col_space2 = st.columns([1, 2, 1])
+            with col_filter:
                 selected_date = st.date_input("📅 اختر التاريخ للفلترة:", datetime.now())
                 filter_date_str = selected_date.strftime("%Y-%m-%d")
 
             filtered_df = df_existing[df_existing["تاريخ الدخول"] == filter_date_str]
 
-            st.metric(label=f"إجمالي الحضور يوم {filter_date_str}", value=f"{len(filtered_df)} معلم")
+            # إحصائية الحضور في المنتصف
+            m_col1, m_col2, m_col3 = st.columns([1, 2, 1])
+            with m_col2:
+                st.metric(label=f"إجمالي الحضور يوم {filter_date_str}", value=f"{len(filtered_df)} معلم")
 
-            st.subheader("📋 قائمة الحضور:")
-            st.dataframe(filtered_df, use_container_width=True)
+            # عنوان الجدول في المنتصف
+            st.markdown("<h3 class='section-title'>📋 قائمة الحضور</h3>", unsafe_allow_html=True)
+            
+            # عرض الجدول منقّى بدون الفهرس الجانبي وحصر الأعمدة الخمسة فقط
+            st.dataframe(
+                filtered_df[EXPECTED_COLUMNS],
+                use_container_width=True,
+                hide_index=True
+            )
 
-            st.subheader("📥 تصدير التقرير")
+            # زر التحميل في المنتصف
+            st.markdown("<h3 class='section-title'>📥 تصدير التقرير</h3>", unsafe_allow_html=True)
             
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                filtered_df.to_excel(writer, index=False, sheet_name='الحضور')
+                filtered_df[EXPECTED_COLUMNS].to_excel(writer, index=False, sheet_name='الحضور')
             excel_data = output.getvalue()
 
-            st.download_button(
-                label=f"📄 تحميل سجل يوم {filter_date_str} بصيغة Excel",
-                data=excel_data,
-                file_name=f"giza_academy_attendance_{filter_date_str}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            b_col1, b_col2, b_col3 = st.columns([1, 2, 1])
+            with b_col2:
+                st.download_button(
+                    label=f"📄 تحميل سجل يوم {filter_date_str} بصيغة Excel",
+                    data=excel_data,
+                    file_name=f"giza_academy_attendance_{filter_date_str}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
     elif password != "":
         st.error("❌ كلمة السر غير صحيحة!")
