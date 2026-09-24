@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 1. تطبيق تنسيق RTL (من اليمين إلى اليسار) لكل العناصر في الواجهة والSidebar
+# 🎨 1. تنسيقات CSS لضبط RTL وتوسيط العناوين والهيدر
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة كاملة */
@@ -27,57 +27,61 @@ st.markdown("""
         text-align: right !important;
     }
     
-    /* محاذاة عناصر الإدخال والأزرار */
+    /* محاذاة حقول الإدخال */
     .stTextInput input {
         text-align: right !important;
     }
     
-    .stButton button {
-        width: 100%;
+    /* توسيط عنصر الهيدر بالكامل */
+    .header-box {
+        text-align: center !important;
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 15px;
+        border-bottom: 5px solid #10233F;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
     
-    /* الهيدر العلوي لشعار واسم الأكاديمية */
-    .header-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: #f8f9fa;
-        padding: 15px 25px;
-        border-radius: 12px;
-        border-right: 6px solid #10233F;
-        margin-bottom: 25px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    .academy-title {
+        font-size: 28px !important;
+        font-weight: bold !important;
+        color: #10233F !important;
+        text-align: center !important;
+        margin-bottom: 5px !important;
     }
-    .header-title {
-        font-size: 24px;
+    
+    .branch-title {
+        font-size: 32px !important; /* تكبير حجم خط اسم الفرع */
+        font-weight: 900 !important;
+        color: #C9A227 !important;
+        text-align: center !important;
+        margin-top: 5px !important;
+    }
+    
+    /* توسيط أزرار النموذج */
+    .stButton button {
+        width: 100%;
         font-weight: bold;
-        color: #10233F;
-        margin: 0;
-    }
-    .header-subtitle {
-        font-size: 16px;
-        color: #555;
-        margin-top: 4px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 🏛️ 2. الهيدر العلوي: شعار الأكاديمية + اسم الفرع
-col_logo, col_text = st.columns([1, 4])
+# 🏛️ 2. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 
+# عرض اللوجو في المنتصف
+col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
-    # يمكنك استبدال الرابط أدناه بموقع الشعار الخاص بك أو استخدام صورة محليّة: st.image("logo.png")
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/PHP_Logo.svg/1200px-PHP_Logo.svg.png", width=110)
+    # قم باستبدال اسم الصورة باسم ملف اللوجو لديك مثل: "logo.png"
+    st.image("logo.png", use_container_width=True)
 
-with col_text:
-    st.markdown("""
-        <div style="padding-top: 10px;">
-            <div style="font-size: 26px; font-weight: bold; color: #10233F;">الأكاديمية المهنية للمعلمين</div>
-            <div style="font-size: 18px; color: #C9A227; font-weight: bold;">فرع الجيزة</div>
-        </div>
-    """, unsafe_allow_html=True)
-
-st.divider()
+# عرض اسم الأكاديمية والفرع بخط كبير وفي المنتصف
+st.markdown("""
+    <div class="header-box">
+        <div class="academy-title">الأكاديمية المهنية للمعلمين</div>
+        <div class="branch-title">📍 فرع الجيزة</div>
+    </div>
+""", unsafe_allow_html=True)
 
 # إنشاء الاتصال مع Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
