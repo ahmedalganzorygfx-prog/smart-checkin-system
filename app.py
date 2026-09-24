@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط RTL وتوسيط العناوين والجدول
+# 🎨 3. تنسيقات CSS لضبط اتجاه RTL والتوسيط المريح
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -97,7 +97,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 📲 رابط توليد الـ QR بدون حزم إضافية
+# 📲 توليد رابط الـ QR Code ديناميكياً
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
     return f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encoded_url}&color=10233F"
@@ -117,7 +117,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 📂 5. دالة تنظيف البيانات وتنقيتها بالأعمدة الجديدة المطلوبة
+# 📂 5. دالة تنظيف البيانات وتنقيتها بالأعمدة الأساسية المطلوبة
 EXCEL_FILE = "attendance.xlsx"
 EXPECTED_COLUMNS = [
     "كود المعلم",
@@ -154,10 +154,14 @@ page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول م�
 st.sidebar.divider()
 st.sidebar.markdown("### 📲 رمز QR الخاص بالفرع")
 
-# 🔴 ضع رابط تطبيقك الحقيقي والمنشور على Streamlit Cloud هنا:
-app_url = "https://giza-teachers-checkin.streamlit.app"
-qr_image_url = get_qr_url(app_url)
+# جلب رابط التطبيق الحقيقي حالياً أو استخدام الرابط المحدد تلقائياً
+try:
+    current_host = st.context.headers.get("Host", "smart-checkin-system.streamlit.app")
+    app_url = f"https://{current_host}"
+except Exception:
+    app_url = "https://smart-checkin-system.streamlit.app"
 
+qr_image_url = get_qr_url(app_url)
 st.sidebar.image(qr_image_url, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
 
 # ==========================================
@@ -240,7 +244,7 @@ if page == "📝 تسجيل دخول معلم":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة
+# 2️⃣ صفحة لوحة تحكم الإدارة (مع زر دخول)
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
