@@ -79,7 +79,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ضبط زر التسجيل والدخول */
+    /* ضبط زري التسجيل والدخول */
     .stButton button {
         width: 100%;
         font-weight: bold;
@@ -102,9 +102,18 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 📂 5. دالة تنظيف البيانات وتنقيتها ومنع تكرار الخلايا
+# 📂 5. دالة تنظيف البيانات وتنقيتها بالأعمدة الجديدة المطلوبة
 EXCEL_FILE = "attendance.xlsx"
-EXPECTED_COLUMNS = ["كود المعلم", "اسم المعلم", "الرقم القومي", "تاريخ الدخول", "وقت الدخول"]
+EXPECTED_COLUMNS = [
+    "كود المعلم",
+    "اسم المعلم رباعي",
+    "الرقم القومي",
+    "الإدارة",
+    "مكان العمل",
+    "رقم الموبايل",
+    "تاريخ الدخول",
+    "وقت الدخول"
+]
 
 def load_data():
     if os.path.exists(EXCEL_FILE):
@@ -128,7 +137,7 @@ st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم (موسّطة)
+# 1️⃣ صفحة تسجيل دخول المعلم (تحديث الحقول)
 # ==========================================
 if page == "📝 تسجيل دخول معلم":
     st.markdown("""
@@ -139,15 +148,26 @@ if page == "📝 تسجيل دخول معلم":
     """, unsafe_allow_html=True)
 
     with st.form(key="checkin_form", clear_on_submit=True):
-        teacher_id = st.text_input("كود المعلم / رقم السجل", placeholder="أدخل كود المعلم الخاص بك")
-        teacher_name = st.text_input("اسم المعلم ثلاثي / رباعي", placeholder="أدخل اسمك الكريم")
-        national_id = st.text_input("الرقم القومي (اختياري)", placeholder="14 رقم")
+        teacher_id = st.text_input("كود المعلم / رقم السجل *", placeholder="أدخل كود المعلم الخاص بك")
+        teacher_name = st.text_input("اسم المعلم رباعي *", placeholder="أدخل اسمك رباعياً")
+        national_id = st.text_input("الرقم القومي (إجباري) *", placeholder="أدخل الرقم القومي المكون من 14 رقم", max_chars=14)
+        
+        col_adm, col_work = st.columns(2)
+        with col_adm:
+            administration = st.text_input("الإدارة التعليمية", placeholder="مثال: إدارة جنوب الجيزة")
+        with col_work:
+            workplace = st.text_input("مكان العمل (المدرسة / الجهة)", placeholder="أدخل اسم المدرسة أو جهة العمل")
+            
+        mobile_num = st.text_input("رقم الموبايل", placeholder="مثال: 01012345678")
         
         submit_button = st.form_submit_button(label="تسجيل الدخول 🚀")
 
     if submit_button:
-        if not teacher_id or not teacher_name:
-            st.error("⚠️ يُرجى إدخال كود المعلم والاسم للتمكن من التسجيل.")
+        # شروط التحقق من البيانات الأساسية والرقم القومي
+        if not teacher_id or not teacher_name or not national_id:
+            st.error("⚠️ يُرجى ملء الحقول الإجبارية: (كود المعلم، اسم المعلم رباعي، والرقم القومي).")
+        elif len(national_id.strip()) != 14 or not national_id.strip().isdigit():
+            st.error("⚠️ يُرجى التأكد من إدخال رقم قومي صحيح مكون من 14 رقماً.")
         else:
             now = datetime.now()
             today_date = now.strftime("%Y-%m-%d")
@@ -155,8 +175,12 @@ if page == "📝 تسجيل دخول معلم":
 
             already_registered = False
             if not df_existing.empty:
-                check_record = df_existing[(df_existing["كود المعلم"].astype(str).str.strip() == str(teacher_id).strip()) & 
-                                         (df_existing["تاريخ الدخول"].astype(str) == today_date)]
+                # التحقق من التسجيل المسبق باستخدام الرقم القومي أو كود المعلم لنفس اليوم
+                check_record = df_existing[
+                    ((df_existing["كود المعلم"].astype(str).str.strip() == str(teacher_id).strip()) |
+                     (df_existing["الرقم القومي"].astype(str).str.strip() == str(national_id).strip())) & 
+                    (df_existing["تاريخ الدخول"].astype(str) == today_date)
+                ]
                 if not check_record.empty:
                     already_registered = True
 
@@ -165,8 +189,11 @@ if page == "📝 تسجيل دخول معلم":
             else:
                 new_data = pd.DataFrame([{
                     "كود المعلم": str(teacher_id).strip(),
-                    "اسم المعلم": str(teacher_name).strip(),
-                    "الرقم القومي": str(national_id).strip() if national_id else "",
+                    "اسم المعلم رباعي": str(teacher_name).strip(),
+                    "الرقم القومي": str(national_id).strip(),
+                    "الإدارة": str(administration).strip() if administration else "-",
+                    "مكان العمل": str(workplace).strip() if workplace else "-",
+                    "رقم الموبايل": str(mobile_num).strip() if mobile_num else "-",
                     "تاريخ الدخول": str(today_date),
                     "وقت الدخول": str(current_time)
                 }])
@@ -179,16 +206,14 @@ if page == "📝 تسجيل دخول معلم":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (مع زر دخول)
+# 2️⃣ صفحة لوحة تحكم الإدارة (تحديث الجدول)
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
 
-    # تهيئة حالة تسجيل الدخول في session_state
     if "admin_logged_in" not in st.session_state:
         st.session_state["admin_logged_in"] = False
 
-    # إذا لم يكن الإداري قد سجل دخوله بعد، يُعرض نموذج إدخال كلمة المرور وزر الدخول
     if not st.session_state["admin_logged_in"]:
         col_s1, col_form, col_s2 = st.columns([1, 2, 1])
         with col_form:
@@ -205,7 +230,6 @@ elif page == "🔒 لوحة تحكم الإدارة":
                 else:
                     st.error("❌ كلمة السر غير صحيحة!")
 
-    # عرض لوحة التحكم بعد التحقق ووجود زر الخروج
     if st.session_state["admin_logged_in"]:
         col_title, col_logout = st.columns([4, 1])
         with col_logout:
