@@ -70,6 +70,18 @@ st.markdown("""
         color: #C9A227 !important;
         text-align: center !important;
         margin-top: 5px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .subtitle-badge {
+        display: inline-block;
+        background-color: #10233F;
+        color: #ffffff !important;
+        font-size: 20px !important;
+        font-weight: bold !important;
+        padding: 8px 25px;
+        border-radius: 20px;
+        margin-top: 8px;
     }
     
     /* توسيط عناوين قسم الإدارة وقائمة الحضور */
@@ -102,11 +114,9 @@ def get_qr_url(url):
 # 🖨️ دالة إنشاء بطاقة باركود رسمية جاهزة للطباعة
 @st.cache_data(ttl=3600)
 def generate_printable_card(app_url_str, logo_file_path):
-    # إنشاء صورة بطاقة ملصق بمقاس 700x850 بكسل
     card = Image.new("RGB", (700, 850), color="#FFFFFF")
     draw = ImageDraw.Draw(card)
     
-    # رسم إطار رمزي بلون الأكاديمية
     draw.rectangle([(20, 20), (680, 830)], outline="#10233F", width=6)
     draw.rectangle([(28, 28), (672, 822)], outline="#C9A227", width=2)
     
@@ -121,7 +131,6 @@ def generate_printable_card(app_url_str, logo_file_path):
         except Exception:
             y_offset += 20
 
-    # جلب الـ QR عالي الدقة للطباعة
     encoded_url = urllib.parse.quote(app_url_str)
     qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
     
@@ -138,7 +147,7 @@ def generate_printable_card(app_url_str, logo_file_path):
     card.save(buf, format="PNG")
     return buf.getvalue()
 
-# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
+# 🏛️ 4. العرض العلوي (الشعار وعنوان تسجيل الحضور اليومي تحته مباشرة)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
     if logo_path:
@@ -150,6 +159,7 @@ st.markdown("""
     <div class="header-box">
         <div class="academy-title">الأكاديمية المهنية للمعلمين</div>
         <div class="branch-title">📍 فرع الجيزة</div>
+        <div><span class="subtitle-badge">📋 تسجيل الحضور اليومي</span></div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -190,7 +200,6 @@ page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل حضور ا�
 st.sidebar.divider()
 st.sidebar.markdown("### 📲 باركود التسجيل بالفرع")
 
-# جلب رابط التطبيق الحقيقي
 try:
     current_host = st.context.headers.get("Host", "smart-checkin-system.streamlit.app")
     app_url = f"https://{current_host}"
@@ -200,7 +209,6 @@ except Exception:
 qr_image_url = get_qr_url(app_url)
 st.sidebar.image(qr_image_url, caption="امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
 
-# 🖨️ زر تنزيل وطباعة الباركود بالقائمة الجانبية
 try:
     card_bytes = generate_printable_card(app_url, logo_path)
     st.sidebar.download_button(
@@ -218,7 +226,6 @@ except Exception:
 if page == "📝 تسجيل حضور المعلمين اليومي":
     st.markdown("""
         <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="color: #10233F; margin-bottom: 8px;">📝 تسجيل حضور المعلمين اليومي بالمقر</h2>
             <p style="color: #555; font-size: 16px; margin: 0;">أهلاً بك! يُرجى إدخال البيانات التالية لتسجيل حضورك اليوم.</p>
         </div>
     """, unsafe_allow_html=True)
