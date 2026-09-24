@@ -153,13 +153,15 @@ page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول م�
 
 st.sidebar.divider()
 st.sidebar.markdown("### 📲 رمز QR الخاص بالفرع")
-app_url = "https://smart-checkin-system.streamlit.app"
+
+# 🔴 ضع رابط تطبيقك الحقيقي والمنشور على Streamlit Cloud هنا:
+app_url = "https://giza-teachers-checkin.streamlit.app"
 qr_image_url = get_qr_url(app_url)
 
 st.sidebar.image(qr_image_url, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
 
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم (عرض الـ QR في الواجهة)
+# 1️⃣ صفحة تسجيل دخول المعلم
 # ==========================================
 if page == "📝 تسجيل دخول معلم":
     col_main, col_qr_view = st.columns([3, 1])
