@@ -1,6 +1,6 @@
 import os
 import io
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
 from PIL import Image
@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه RTL والتوسيط المريح
+# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط المريح
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -97,6 +97,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# 🕒 دالة جلب توقيت مصر الحالي (UTC+3)
+def get_egypt_datetime():
+    egypt_tz = timezone(timedelta(hours=3))
+    return datetime.now(egypt_tz)
+
 # 📲 توليد رابط الـ QR Code ديناميكياً
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
@@ -154,7 +159,6 @@ page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول م�
 st.sidebar.divider()
 st.sidebar.markdown("### 📲 رمز QR الخاص بالفرع")
 
-# جلب رابط التطبيق الحقيقي حالياً أو استخدام الرابط المحدد تلقائياً
 try:
     current_host = st.context.headers.get("Host", "smart-checkin-system.streamlit.app")
     app_url = f"https://{current_host}"
@@ -165,7 +169,7 @@ qr_image_url = get_qr_url(app_url)
 st.sidebar.image(qr_image_url, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
 
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم
+# 1️⃣ صفحة تسجيل دخول المعلم (بتوقيت مصر)
 # ==========================================
 if page == "📝 تسجيل دخول معلم":
     col_main, col_qr_view = st.columns([3, 1])
@@ -208,7 +212,8 @@ if page == "📝 تسجيل دخول معلم":
         elif len(national_id.strip()) != 14 or not national_id.strip().isdigit():
             st.error("⚠️ يُرجى التأكد من إدخال رقم قومي صحيح مكون من 14 رقماً.")
         else:
-            now = datetime.now()
+            # 🕒 حساب تاريخ ووقت مصر الحالي بدقة
+            now = get_egypt_datetime()
             today_date = now.strftime("%Y-%m-%d")
             current_time = now.strftime("%H:%M:%S")
 
@@ -240,11 +245,11 @@ if page == "📝 تسجيل دخول معلم":
                 updated_df = updated_df[EXPECTED_COLUMNS]
                 updated_df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
                 
-                st.success(f"✅ تم تسجيل دخولك بنجاح يا أستاذ/ة {teacher_name} الساعة {current_time}!")
+                st.success(f"✅ تم تسجيل دخولك بنجاح يا أستاذ/ة {teacher_name} الساعة {current_time} بتوقيت القاهرة!")
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (مع زر دخول)
+# 2️⃣ صفحة لوحة تحكم الإدارة (مع فلترة بتوقيت مصر)
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
@@ -283,7 +288,7 @@ elif page == "🔒 لوحة تحكم الإدارة":
         else:
             col_space1, col_filter, col_space2 = st.columns([1, 2, 1])
             with col_filter:
-                selected_date = st.date_input("📅 اختر التاريخ للفلترة:", datetime.now())
+                selected_date = st.date_input("📅 اختر التاريخ للفلترة:", get_egypt_datetime())
                 filter_date_str = selected_date.strftime("%Y-%m-%d")
 
             filtered_df = df_existing[df_existing["تاريخ الدخول"] == filter_date_str]
