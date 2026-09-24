@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL وقواعد الطباعة الخاصة بـ A4
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط */
@@ -97,6 +97,35 @@ st.markdown("""
         width: 100%;
         font-weight: bold;
     }
+
+    /* 🖨️ تخصيص الطباعة: إخفاء كل شيء وطباعة بطاقة الـ QR فقط لملء ورقة A4 */
+    @media print {
+        /* إخفاء القائمة الجانبية وأزرار السيرفر وهيدر Streamlit */
+        [data-testid="stSidebar"], header, footer, .stAlert, .no-print {
+            display: none !important;
+        }
+        
+        /* جعل الخلفية بيضاء ناصعة */
+        body, .stApp {
+            background-color: #ffffff !important;
+        }
+
+        /* ضبط بطاقة الطباعة لتصبح في منتصف الصفحة وبمقاس A4 */
+        .printable-card {
+            border: 5px solid #10233F !important;
+            padding: 30px !important;
+            border-radius: 20px !important;
+            margin: 0 auto !important;
+            width: 90% !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -108,7 +137,7 @@ def get_egypt_datetime():
 # 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -238,19 +267,37 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة طباعة بطاقة الـ QR (مضمونة ومبسطة 100%)
+# 2️⃣ صفحة طباعة بطاقة الـ QR (A4 المخصصة)
 # ==========================================
 elif page == "🖨️ طباعة بطاقة الـ QR":
-    st.markdown("<h2 style='text-align: center; color: #10233F;'>🏛️ الأكاديمية المهنية للمعلمين</h2>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #C9A227;'>📍 فرع الجيزة</h3>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: #10233F;'>📋 تسجيل حضور المعلمين اليومي</h4>", unsafe_allow_html=True)
-    
-    st.divider()
+    st.markdown("""
+        <div class="no-print">
+            <div style="text-align: center; background-color: #eef2f7; padding: 12px; border-radius: 10px; margin-bottom: 20px;">
+                💡 <b>طريقة الطباعة:</b> اختر هذه الصفحة ثم اضغط <b>Ctrl + P</b> من الكمبيوتر، وستطبع البطاقة أدناه فقط على ورقة A4.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
-    with col_m2:
-        st.image(qr_image_url, caption="📲 امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
-        st.info("💡 يمكنك استخدام اختصار الطباعة (Ctrl + P) من جهازك لطباعة هذه الورقة مباشرة.")
+    # البطاقة الرسمية المحددة للطباعة فقط
+    st.markdown(f"""
+        <div class="printable-card" style="border: 6px solid #10233F; padding: 30px; border-radius: 20px; text-align: center; background-color: #ffffff; max-width: 650px; margin: 0 auto; direction: rtl; font-family: sans-serif;">
+            <div style="border: 3px solid #C9A227; border-radius: 15px; padding: 15px; background-color: #ffffff; margin-bottom: 20px;">
+                <h2 style="color: #10233F; margin: 0; font-size: 26px; font-weight: bold;">الأكاديمية المهنية للمعلمين</h2>
+                <h3 style="color: #C9A227; margin: 8px 0; font-size: 24px; font-weight: bold;">📍 فرع الجيزة</h3>
+                <div style="background-color: #10233F; color: #ffffff; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 10px;">
+                    📋 تسجيل حضور المعلمين اليومي
+                </div>
+            </div>
+            
+            <div style="padding: 10px; display: inline-block;">
+                <img src="{qr_image_url}" style="width: 320px; height: 320px; display: block; margin: 0 auto;">
+            </div>
+            
+            <div style="color: #555555; font-size: 16px; font-weight: bold; margin-top: 15px;">
+                📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # 3️⃣ صفحة لوحة تحكم الإدارة
