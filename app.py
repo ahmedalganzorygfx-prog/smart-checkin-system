@@ -4,6 +4,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 from PIL import Image
+import qrcode
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
 logo_path = None
@@ -70,6 +71,15 @@ st.markdown("""
         margin-top: 5px !important;
     }
     
+    .qr-card {
+        background-color: #ffffff;
+        border: 2px dashed #C9A227;
+        border-radius: 15px;
+        padding: 15px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
     /* توسيط عناوين قسم الإدارة وقائمة الحضور */
     .section-title {
         text-align: center !important;
@@ -86,6 +96,22 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+
+# 📲 دالة توليد رمز QR ديناميكياً
+def generate_qr_code(url):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#10233F", back_color="white")
+    
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -132,38 +158,63 @@ def load_data():
 
 df_existing = load_data()
 
-# 📌 6. القائمة الجانبية للتنقل
+# 📌 6. القائمة الجانبية للتنقل عرض الـ QR
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
+st.sidebar.divider()
+st.sidebar.markdown("### 📲 رمز QR الخاص بالفرع")
+# يمكنك استبدال الرابط أدناه برابط التطبيق النظير الخاص بك على Streamlit Cloud
+app_url = "https://giza-teachers-checkin.streamlit.app"
+qr_bytes = generate_qr_code(app_url)
+
+st.sidebar.image(qr_bytes, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
+st.sidebar.download_button(
+    label="📥 تحميل QR Code للطباعة",
+    data=qr_bytes,
+    file_name="giza_academy_qr.png",
+    mime="image/png"
+)
+
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم (تحديث الحقول)
+# 1️⃣ صفحة تسجيل دخول المعلم (عرض الـ QR في الواجهة)
 # ==========================================
 if page == "📝 تسجيل دخول معلم":
-    st.markdown("""
-        <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="color: #10233F; margin-bottom: 8px;">📝 تسجيل حضور المعلمين بالمقر</h2>
-            <p style="color: #555; font-size: 16px; margin: 0;">أهلاً بك! يُرجى إدخال البيانات التالية لتسجيل حضورك اليوم.</p>
-        </div>
-    """, unsafe_allow_html=True)
+    col_main, col_qr_view = st.columns([3, 1])
+    
+    with col_main:
+        st.markdown("""
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #10233F; margin-bottom: 8px;">📝 تسجيل حضور المعلمين بالمقر</h2>
+                <p style="color: #555; font-size: 16px; margin: 0;">أهلاً بك! يُرجى إدخال البيانات التالية لتسجيل حضورك اليوم.</p>
+            </div>
+        """, unsafe_allow_html=True)
 
-    with st.form(key="checkin_form", clear_on_submit=True):
-        teacher_id = st.text_input("كود المعلم / رقم السجل *", placeholder="أدخل كود المعلم الخاص بك")
-        teacher_name = st.text_input("اسم المعلم رباعي *", placeholder="أدخل اسمك رباعياً")
-        national_id = st.text_input("الرقم القومي (إجباري) *", placeholder="أدخل الرقم القومي المكون من 14 رقم", max_chars=14)
-        
-        col_adm, col_work = st.columns(2)
-        with col_adm:
-            administration = st.text_input("الإدارة التعليمية", placeholder="مثال: إدارة جنوب الجيزة")
-        with col_work:
-            workplace = st.text_input("مكان العمل (المدرسة / الجهة)", placeholder="أدخل اسم المدرسة أو جهة العمل")
+        with st.form(key="checkin_form", clear_on_submit=True):
+            teacher_id = st.text_input("كود المعلم / رقم السجل *", placeholder="أدخل كود المعلم الخاص بك")
+            teacher_name = st.text_input("اسم المعلم رباعي *", placeholder="أدخل اسمك رباعياً")
+            national_id = st.text_input("الرقم القومي (إجباري) *", placeholder="أدخل الرقم القومي المكون من 14 رقم", max_chars=14)
             
-        mobile_num = st.text_input("رقم الموبايل", placeholder="مثال: 01012345678")
-        
-        submit_button = st.form_submit_button(label="تسجيل الدخول 🚀")
+            col_adm, col_work = st.columns(2)
+            with col_adm:
+                administration = st.text_input("الإدارة التعليمية", placeholder="مثال: إدارة جنوب الجيزة")
+            with col_work:
+                workplace = st.text_input("مكان العمل (المدرسة / الجهة)", placeholder="أدخل اسم المدرسة أو جهة العمل")
+                
+            mobile_num = st.text_input("رقم الموبايل", placeholder="مثال: 01012345678")
+            
+            submit_button = st.form_submit_button(label="تسجيل الدخول 🚀")
+
+    with col_qr_view:
+        st.markdown("""
+            <div class="qr-card">
+                <h4 style="color: #10233F; margin-top: 0;">📲 باركود الحضور</h4>
+                <p style="font-size: 12px; color: #666;">للتسجيل المباشر من هاتف المعلم</p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.image(qr_bytes, use_container_width=True)
 
     if submit_button:
-        # شروط التحقق من البيانات الأساسية والرقم القومي
         if not teacher_id or not teacher_name or not national_id:
             st.error("⚠️ يُرجى ملء الحقول الإجبارية: (كود المعلم، اسم المعلم رباعي، والرقم القومي).")
         elif len(national_id.strip()) != 14 or not national_id.strip().isdigit():
@@ -175,7 +226,6 @@ if page == "📝 تسجيل دخول معلم":
 
             already_registered = False
             if not df_existing.empty:
-                # التحقق من التسجيل المسبق باستخدام الرقم القومي أو كود المعلم لنفس اليوم
                 check_record = df_existing[
                     ((df_existing["كود المعلم"].astype(str).str.strip() == str(teacher_id).strip()) |
                      (df_existing["الرقم القومي"].astype(str).str.strip() == str(national_id).strip())) & 
@@ -206,7 +256,7 @@ if page == "📝 تسجيل دخول معلم":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (تحديث الجدول)
+# 2️⃣ صفحة لوحة تحكم الإدارة
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
