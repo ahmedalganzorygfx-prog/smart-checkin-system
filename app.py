@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS أساسية لضبط اتجاه RTL
+# 🎨 3. تنسيقات CSS أساسية لضبط اتجاه RTL والطباعة
 st.markdown("""
     <style>
     .stMainBlockContainer, [data-testid="stForm"] {
@@ -108,7 +108,7 @@ def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
     return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
 
-# 🏛️ 4. العرض العلوي الرئيسي
+# 🏛️ 4. العرض العلوي الرئيسي (الشعار والعناوين الرئيسية)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
     if logo_path:
@@ -236,7 +236,7 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة طباعة بطاقة الـ QR (عرض الـ QR مباشرة بدون نصوص مكررة)
+# 2️⃣ صفحة طباعة بطاقة الـ QR (تنسيق ناصع بدون عناصر زائدة)
 # ==========================================
 elif page == "🖨️ طباعة بطاقة الـ QR":
     col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
