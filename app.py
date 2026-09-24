@@ -1,19 +1,31 @@
-import streamlit as st
+import os
+import io
 from datetime import datetime
 import pandas as pd
+import streamlit as st
+from PIL import Image
 from streamlit_gsheets import GSheetsConnection
-import io
-import os
 
-# ضبط إعدادات الصفحة
+# 🖼️ 1. تحديد أيقونة التبويب (Favicon)
+# يبحث التطبيق عن صورة الشعار سواء كانت باسم Logo.png أو logo.png
+logo_path = None
+if os.path.exists("Logo.png"):
+    logo_path = "Logo.png"
+elif os.path.exists("logo.png"):
+    logo_path = "logo.png"
+
+# استخدام الصورة كأيقونة للتبويب إن وجدت، أو الإيموجي كبديل
+page_icon_val = Image.open(logo_path) if logo_path else "🏫"
+
+# ⚙️ 2. ضبط إعدادات الصفحة
 st.set_page_config(
     page_title="الأكاديمية المهنية للمعلمين - فرع الجيزة",
-    page_icon="🏫",
+    page_icon=page_icon_val,
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 🎨 1. تنسيقات CSS لضبط RTL وتوسيط العناوين والهيدر
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL وتوسيط الهيدر والعناوين
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة كاملة */
@@ -53,14 +65,14 @@ st.markdown("""
     }
     
     .branch-title {
-        font-size: 32px !important; /* تكبير حجم خط اسم الفرع */
+        font-size: 34px !important; /* تكبير خط اسم الفرع */
         font-weight: 900 !important;
         color: #C9A227 !important;
         text-align: center !important;
         margin-top: 5px !important;
     }
     
-    /* توسيط أزرار النموذج */
+    /* توسيط زر التسجيل */
     .stButton button {
         width: 100%;
         font-weight: bold;
@@ -68,18 +80,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🏛️ 2. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
-
-# عرض اللوجو في المنتصف مع حماية ضد عدم وجود الملف
+# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", use_container_width=True)
+    if logo_path:
+        st.image(logo_path, use_container_width=True)
     else:
-        # عرض أيقونة بديلة محميّة في حالة عدم رفع ملف الشعار على GitHub بعد
         st.markdown("<h1 style='text-align: center; font-size: 60px; margin: 0;'>🏫</h1>", unsafe_allow_html=True)
 
-# عرض اسم الأكاديمية والفرع بخط كبير وفي المنتصف
 st.markdown("""
     <div class="header-box">
         <div class="academy-title">الأكاديمية المهنية للمعلمين</div>
@@ -87,16 +95,15 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# إنشاء الاتصال مع Google Sheets
+# 🔗 5. الاتصال بـ Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# جلب البيانات الحالية من Google Sheets
 try:
     df_existing = conn.read(ttl=0)
 except Exception:
     df_existing = pd.DataFrame(columns=["كود المعلم", "اسم المعلم", "الرقم القومي", "تاريخ الدخول", "وقت الدخول"])
 
-# 📌 القائمة الجانبية للتنقل
+# 📌 6. القائمة الجانبية للتنقل
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
