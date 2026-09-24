@@ -23,27 +23,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL وقواعد الطباعة الخاصة بـ A4
+# 🎨 3. تنسيقات CSS أساسية لضبط اتجاه RTL والطباعة
 st.markdown("""
     <style>
-    /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط */
     .stMainBlockContainer, [data-testid="stForm"] {
         direction: rtl;
         text-align: right;
     }
-    
-    /* محاذاة عناصر الإدخال لليمين */
     .stTextInput input, .stDateInput input {
         text-align: right !important;
         direction: rtl !important;
     }
-    
-    /* تنسيق القائمة الجانبية */
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
         text-align: right;
     }
-    
-    /* توسيط عنصر الهيدر */
     .header-box {
         text-align: center !important;
         background-color: #f8f9fa;
@@ -54,7 +47,6 @@ st.markdown("""
         box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         direction: rtl;
     }
-    
     .academy-title {
         font-size: 26px !important;
         font-weight: bold !important;
@@ -62,7 +54,6 @@ st.markdown("""
         text-align: center !important;
         margin-bottom: 5px !important;
     }
-    
     .branch-title {
         font-size: 30px !important;
         font-weight: 900 !important;
@@ -71,7 +62,6 @@ st.markdown("""
         margin-top: 5px !important;
         margin-bottom: 12px !important;
     }
-
     .subtitle-badge {
         display: inline-block;
         background-color: #10233F;
@@ -82,8 +72,6 @@ st.markdown("""
         border-radius: 20px;
         margin-top: 8px;
     }
-    
-    /* توسيط العناوين */
     .section-title {
         text-align: center !important;
         color: #10233F;
@@ -91,36 +79,17 @@ st.markdown("""
         margin-top: 20px;
         margin-bottom: 15px;
     }
-
-    /* ضبط زري التسجيل والدخول */
     .stButton button, .stDownloadButton button {
         width: 100%;
         font-weight: bold;
     }
-
-    /* 🖨️ تخصيص الطباعة: إخفاء كل شيء وطباعة بطاقة الـ QR فقط لملء ورقة A4 */
     @media print {
-        /* إخفاء القائمة الجانبية وأزرار السيرفر وهيدر Streamlit */
-        [data-testid="stSidebar"], header, footer, .stAlert, .no-print {
+        [data-testid="stSidebar"], header, footer {
             display: none !important;
         }
-        
-        /* جعل الخلفية بيضاء ناصعة */
         body, .stApp {
             background-color: #ffffff !important;
         }
-
-        /* ضبط بطاقة الطباعة لتصبح في منتصف الصفحة وبمقاس A4 */
-        .printable-card {
-            border: 5px solid #10233F !important;
-            padding: 30px !important;
-            border-radius: 20px !important;
-            margin: 0 auto !important;
-            width: 90% !important;
-            box-shadow: none !important;
-            page-break-inside: avoid;
-        }
-
         @page {
             size: A4 portrait;
             margin: 10mm;
@@ -139,7 +108,7 @@ def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
     return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
 
-# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع)
+# 🏛️ 4. العرض العلوي الرئيسي
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
     if logo_path:
@@ -155,7 +124,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 📂 5. دالة تنظيف البيانات وتنقيتها
+# 📂 5. دالة تنظيف وقراءة ملف Excel
 EXCEL_FILE = "attendance.xlsx"
 EXPECTED_COLUMNS = [
     "كود المعلم",
@@ -267,37 +236,19 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة طباعة بطاقة الـ QR (A4 المخصصة)
+# 2️⃣ صفحة طباعة بطاقة الـ QR الرسمية
 # ==========================================
 elif page == "🖨️ طباعة بطاقة الـ QR":
-    st.markdown("""
-        <div class="no-print">
-            <div style="text-align: center; background-color: #eef2f7; padding: 12px; border-radius: 10px; margin-bottom: 20px;">
-                💡 <b>طريقة الطباعة:</b> اختر هذه الصفحة ثم اضغط <b>Ctrl + P</b> من الكمبيوتر، وستطبع البطاقة أدناه فقط على ورقة A4.
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.subheader("🏛️ الأكاديمية المهنية للمعلمين")
+    st.write("📍 **فرع الجيزة**")
+    st.write("📋 **تسجيل حضور المعلمين اليومي**")
+    
+    st.divider()
 
-    # البطاقة الرسمية المحددة للطباعة فقط
-    st.markdown(f"""
-        <div class="printable-card" style="border: 6px solid #10233F; padding: 30px; border-radius: 20px; text-align: center; background-color: #ffffff; max-width: 650px; margin: 0 auto; direction: rtl; font-family: sans-serif;">
-            <div style="border: 3px solid #C9A227; border-radius: 15px; padding: 15px; background-color: #ffffff; margin-bottom: 20px;">
-                <h2 style="color: #10233F; margin: 0; font-size: 26px; font-weight: bold;">الأكاديمية المهنية للمعلمين</h2>
-                <h3 style="color: #C9A227; margin: 8px 0; font-size: 24px; font-weight: bold;">📍 فرع الجيزة</h3>
-                <div style="background-color: #10233F; color: #ffffff; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 10px;">
-                    📋 تسجيل حضور المعلمين اليومي
-                </div>
-            </div>
-            
-            <div style="padding: 10px; display: inline-block;">
-                <img src="{qr_image_url}" style="width: 320px; height: 320px; display: block; margin: 0 auto;">
-            </div>
-            
-            <div style="color: #555555; font-size: 16px; font-weight: bold; margin-top: 15px;">
-                📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
+    with col_m2:
+        st.image(qr_image_url, caption="📲 امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
+        st.info("💡 يمكنك استخدام اختصار الطباعة (Ctrl + P) لطباعة هذه الصفحة كبطاقة رسمية.")
 
 # ==========================================
 # 3️⃣ صفحة لوحة تحكم الإدارة
