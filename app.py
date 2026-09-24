@@ -4,7 +4,6 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 from PIL import Image
-from streamlit_gsheets import GSheetsConnection
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
 logo_path = None
@@ -23,23 +22,27 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والعرض المريح على كافة الأجهزة
 st.markdown("""
     <style>
+    /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
     .stMainBlockContainer, [data-testid="stForm"] {
         direction: rtl;
         text-align: right;
     }
     
+    /* محاذاة عناصر الإدخال لليمين */
     .stTextInput input, .stDateInput input {
         text-align: right !important;
         direction: rtl !important;
     }
     
+    /* تنسيق القائمة الجانبية دون الـ RTL القسري لعدم كسر العرض */
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
         text-align: right;
     }
     
+    /* توسيط عنصر الهيدر بالكامل */
     .header-box {
         text-align: center !important;
         background-color: #f8f9fa;
@@ -67,6 +70,7 @@ st.markdown("""
         margin-top: 5px !important;
     }
     
+    /* ضبط زر التسجيل */
     .stButton button {
         width: 100%;
         font-weight: bold;
@@ -74,7 +78,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🏛️ 4. العرض العلوي
+# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
     if logo_path:
@@ -89,15 +93,15 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 🔗 5. الاتصال بـ Google Sheets
-conn = st.connection("gsheets", type=GSheetsConnection)
+# 📂 5. التعامل مع ملف Excel
+EXCEL_FILE = "attendance.xlsx"
 
-try:
-    df_existing = conn.read(ttl=0)
-except Exception:
+if os.path.exists(EXCEL_FILE):
+    df_existing = pd.read_excel(EXCEL_FILE, dtype=str)
+else:
     df_existing = pd.DataFrame(columns=["كود المعلم", "اسم المعلم", "الرقم القومي", "تاريخ الدخول", "وقت الدخول"])
 
-# 📌 6. القائمة الجانبية
+# 📌 6. القائمة الجانبية للتنقل
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
@@ -138,26 +142,22 @@ if page == "📝 تسجيل دخول معلم":
                 st.warning(f"⚠️ أهلاً أستاذ/ة {teacher_name}، لقد تم تسجيل حضورك اليوم بالفعل!")
             else:
                 new_data = pd.DataFrame([{
-                    "كود المعلم": teacher_id,
-                    "اسم المعلم": teacher_name,
-                    "الرقم القومي": national_id,
-                    "تاريخ الدخول": today_date,
-                    "وقت الدخول": current_time
+                    "كود المعلم": str(teacher_id),
+                    "اسم المعلم": str(teacher_name),
+                    "الرقم القومي": str(national_id) if national_id else "",
+                    "تاريخ الدخول": str(today_date),
+                    "وقت الدخول": str(current_time)
                 }])
                 
+                # إضافة السجل الجديد وحفظه في ملف Excel
                 updated_df = pd.concat([df_existing, new_data], ignore_index=True)
-                
-                # كتابة البيانات المحسّنة لتجنب UnsupportedOperationError
-                try:
-                    conn.update(worksheet="Sheet1", data=updated_df)
-                except Exception:
-                    conn.create(worksheet="Sheet1", data=updated_df)
+                updated_df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
                 
                 st.success(f"✅ تم تسجيل دخولك بنجاح يا أستاذ/ة {teacher_name} الساعة {current_time}!")
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة
+# 2️⃣ صفحة لوحة تحكم الإدارة (محمية)
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.subheader("📊 لوحة تحكم الإدارة - سجل الحضور اليومي")
