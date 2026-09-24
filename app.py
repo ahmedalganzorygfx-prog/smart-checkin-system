@@ -3,8 +3,9 @@ import io
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import urllib.parse
+import urllib.request
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
 logo_path = None
@@ -23,7 +24,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والتوسيط المريح
+# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط المريح
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -81,7 +82,7 @@ st.markdown("""
     }
 
     /* ضبط زري التسجيل والدخول */
-    .stButton button {
+    .stButton button, .stDownloadButton button {
         width: 100%;
         font-weight: bold;
     }
@@ -93,10 +94,49 @@ def get_egypt_datetime():
     egypt_tz = timezone(timedelta(hours=3))
     return datetime.now(egypt_tz)
 
-# 📲 رابط صورة الـ QR Code من خلال API مجاني
+# 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
     return f"https://api.qrserver.com/v1/create-qr-code/?size=350x350&data={encoded_url}&color=10233F"
+
+# 🖨️ دالة إنشاء بطاقة باركود رسمية جاهزة للطباعة
+@st.cache_data(ttl=3600)
+def generate_printable_card(app_url_str, logo_file_path):
+    # إنشاء صورة بطاقة ملصق بمقاس 700x850 بكسل
+    card = Image.new("RGB", (700, 850), color="#FFFFFF")
+    draw = ImageDraw.Draw(card)
+    
+    # رسم إطار رمزي بلون الأكاديمية
+    draw.rectangle([(20, 20), (680, 830)], outline="#10233F", width=6)
+    draw.rectangle([(28, 28), (672, 822)], outline="#C9A227", width=2)
+    
+    y_offset = 50
+    if logo_file_path and os.path.exists(logo_file_path):
+        try:
+            logo = Image.open(logo_file_path).convert("RGBA")
+            logo.thumbnail((160, 160))
+            logo_x = (700 - logo.width) // 2
+            card.paste(logo, (logo_x, y_offset), logo)
+            y_offset += logo.height + 20
+        except Exception:
+            y_offset += 20
+
+    # جلب الـ QR عالي الدقة للطباعة
+    encoded_url = urllib.parse.quote(app_url_str)
+    qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
+    
+    try:
+        req = urllib.request.urlopen(qr_api_url)
+        qr_bytes_data = req.read()
+        qr_img = Image.open(io.BytesIO(qr_bytes_data)).convert("RGB")
+        qr_x = (700 - qr_img.width) // 2
+        card.paste(qr_img, (qr_x, y_offset + 50))
+    except Exception:
+        pass
+        
+    buf = io.BytesIO()
+    card.save(buf, format="PNG")
+    return buf.getvalue()
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -159,6 +199,18 @@ except Exception:
 
 qr_image_url = get_qr_url(app_url)
 st.sidebar.image(qr_image_url, caption="امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
+
+# 🖨️ زر تنزيل وطباعة الباركود بالقائمة الجانبية
+try:
+    card_bytes = generate_printable_card(app_url, logo_path)
+    st.sidebar.download_button(
+        label="🖨️ تنزيل وطباعة بطاقة الباركود",
+        data=card_bytes,
+        file_name="Giza_Academy_QR_Print.png",
+        mime="image/png"
+    )
+except Exception:
+    pass
 
 # ==========================================
 # 1️⃣ صفحة تسجيل حضور المعلمين اليومي
