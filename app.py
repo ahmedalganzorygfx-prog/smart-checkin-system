@@ -79,7 +79,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ضبط زر التسجيل */
+    /* ضبط زر التسجيل والدخول */
     .stButton button {
         width: 100%;
         font-weight: bold;
@@ -110,10 +110,8 @@ def load_data():
     if os.path.exists(EXCEL_FILE):
         try:
             df = pd.read_excel(EXCEL_FILE, dtype=str)
-            # إزالة أي أعمدة غير معنونة أو زائدة
             df = df.loc[:, ~df.columns.str.contains('^Unnamed', na=False)]
             df = df.dropna(how='all')
-            # التأكد من مطابقة الأعمدة الخمسة الأساسية فقط
             for col in EXPECTED_COLUMNS:
                 if col not in df.columns:
                     df[col] = ""
@@ -173,7 +171,6 @@ if page == "📝 تسجيل دخول معلم":
                     "وقت الدخول": str(current_time)
                 }])
                 
-                # دمج وحفظ البيانات النظيفة فقط
                 updated_df = pd.concat([df_existing, new_data], ignore_index=True)
                 updated_df = updated_df[EXPECTED_COLUMNS]
                 updated_df.to_excel(EXCEL_FILE, index=False, engine="openpyxl")
@@ -182,23 +179,46 @@ if page == "📝 تسجيل دخول معلم":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (منسقة وموسّطة)
+# 2️⃣ صفحة لوحة تحكم الإدارة (مع زر دخول)
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
 
-    password = st.text_input("🔑 أدخل كلمة السر للدخول إلى لوحة التحكم:", type="password")
+    # تهيئة حالة تسجيل الدخول في session_state
+    if "admin_logged_in" not in st.session_state:
+        st.session_state["admin_logged_in"] = False
 
-    ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", "123456")
+    # إذا لم يكن الإداري قد سجل دخوله بعد، يُعرض نموذج إدخال كلمة المرور وزر الدخول
+    if not st.session_state["admin_logged_in"]:
+        col_s1, col_form, col_s2 = st.columns([1, 2, 1])
+        with col_form:
+            with st.form(key="admin_login_form"):
+                password = st.text_input("🔑 أدخل كلمة السر للدخول إلى لوحة التحكم:", type="password")
+                login_button = st.form_submit_button(label="دخول 🔓")
+            
+            ADMIN_PASSWORD = st.secrets.get("ADMIN_PASSWORD", "123456")
 
-    if password == ADMIN_PASSWORD:
+            if login_button:
+                if password == ADMIN_PASSWORD:
+                    st.session_state["admin_logged_in"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ كلمة السر غير صحيحة!")
+
+    # عرض لوحة التحكم بعد التحقق ووجود زر الخروج
+    if st.session_state["admin_logged_in"]:
+        col_title, col_logout = st.columns([4, 1])
+        with col_logout:
+            if st.button("تسجيل الخروج 🔒"):
+                st.session_state["admin_logged_in"] = False
+                st.rerun()
+
         st.success("🔓 تم التحقق بنجاح! أهلاً بك في لوحة إدارة فرع الجيزة.")
         st.divider()
 
         if df_existing.empty:
             st.info("لا توجد أي بيانات مسجلة حتى الآن.")
         else:
-            # الفلترة في المنتصف
             col_space1, col_filter, col_space2 = st.columns([1, 2, 1])
             with col_filter:
                 selected_date = st.date_input("📅 اختر التاريخ للفلترة:", datetime.now())
@@ -206,22 +226,18 @@ elif page == "🔒 لوحة تحكم الإدارة":
 
             filtered_df = df_existing[df_existing["تاريخ الدخول"] == filter_date_str]
 
-            # إحصائية الحضور في المنتصف
             m_col1, m_col2, m_col3 = st.columns([1, 2, 1])
             with m_col2:
                 st.metric(label=f"إجمالي الحضور يوم {filter_date_str}", value=f"{len(filtered_df)} معلم")
 
-            # عنوان الجدول في المنتصف
             st.markdown("<h3 class='section-title'>📋 قائمة الحضور</h3>", unsafe_allow_html=True)
             
-            # عرض الجدول منقّى بدون الفهرس الجانبي وحصر الأعمدة الخمسة فقط
             st.dataframe(
                 filtered_df[EXPECTED_COLUMNS],
                 use_container_width=True,
                 hide_index=True
             )
 
-            # زر التحميل في المنتصف
             st.markdown("<h3 class='section-title'>📥 تصدير التقرير</h3>", unsafe_allow_html=True)
             
             output = io.BytesIO()
@@ -237,6 +253,3 @@ elif page == "🔒 لوحة تحكم الإدارة":
                     file_name=f"giza_academy_attendance_{filter_date_str}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-
-    elif password != "":
-        st.error("❌ كلمة السر غير صحيحة!")
