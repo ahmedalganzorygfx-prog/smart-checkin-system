@@ -3,9 +3,8 @@ import io
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
-from PIL import Image, ImageDraw
+from PIL import Image
 import urllib.parse
-import urllib.request
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
 logo_path = None
@@ -24,10 +23,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والطباعة على A4
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL
 st.markdown("""
     <style>
-    /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
+    /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط */
     .stMainBlockContainer, [data-testid="stForm"] {
         direction: rtl;
         text-align: right;
@@ -44,7 +43,7 @@ st.markdown("""
         text-align: right;
     }
     
-    /* توسيط عنصر الهيدر بالكامل */
+    /* توسيط عنصر الهيدر */
     .header-box {
         text-align: center !important;
         background-color: #f8f9fa;
@@ -84,7 +83,7 @@ st.markdown("""
         margin-top: 8px;
     }
     
-    /* توسيط عناوين قسم الإدارة وقائمة الحضور */
+    /* توسيط العناوين */
     .section-title {
         text-align: center !important;
         color: #10233F;
@@ -98,26 +97,6 @@ st.markdown("""
         width: 100%;
         font-weight: bold;
     }
-
-    /* إعدادات الطباعة المخصصة لورق A4 */
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-a4-card, .print-a4-card * {
-            visibility: visible;
-        }
-        .print-a4-card {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-        @page {
-            size: A4 portrait;
-            margin: 10mm;
-        }
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -129,45 +108,7 @@ def get_egypt_datetime():
 # 📲 دالة جلب رابط صورة الـ QR Code
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=500x500&data={encoded_url}&color=10233F"
-
-# 🖼️ دالة توليد بطاقة A4 ناعمة
-@st.cache_data(ttl=3600)
-def generate_a4_card(app_url_str, logo_file_path):
-    card = Image.new("RGB", (1000, 1400), color="#FFFFFF")
-    draw = ImageDraw.Draw(card)
-    
-    draw.rectangle([(30, 30), (970, 1370)], outline="#10233F", width=10)
-    draw.rectangle([(45, 45), (955, 1355)], outline="#C9A227", width=4)
-    
-    y_offset = 70
-    if logo_file_path and os.path.exists(logo_file_path):
-        try:
-            logo = Image.open(logo_file_path).convert("RGBA")
-            logo.thumbnail((220, 220))
-            logo_x = (1000 - logo.width) // 2
-            card.paste(logo, (logo_x, y_offset), logo)
-            y_offset += logo.height + 40
-        except Exception:
-            y_offset += 40
-    else:
-        y_offset += 40
-
-    encoded_url = urllib.parse.quote(app_url_str)
-    qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=600x600&data={encoded_url}&color=10233F"
-    
-    try:
-        req = urllib.request.urlopen(qr_api_url)
-        qr_bytes_data = req.read()
-        qr_img = Image.open(io.BytesIO(qr_bytes_data)).convert("RGB")
-        qr_x = (1000 - qr_img.width) // 2
-        card.paste(qr_img, (qr_x, y_offset + 30))
-    except Exception:
-        pass
-
-    buf = io.BytesIO()
-    card.save(buf, format="PNG")
-    return buf.getvalue()
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=450x450&data={encoded_url}&color=10233F"
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -219,7 +160,7 @@ df_existing = load_data()
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio(
     "اختر الصفحة:", 
-    ["📝 تسجيل حضور المعلمين اليومي", "🖨️ طباعة/تنزيل بطاقة QR (A4)", "🔒 لوحة تحكم الإدارة"]
+    ["📝 تسجيل حضور المعلمين اليومي", "🖨️ طباعة بطاقة الـ QR", "🔒 لوحة تحكم الإدارة"]
 )
 
 try:
@@ -297,46 +238,19 @@ if page == "📝 تسجيل حضور المعلمين اليومي":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة طباعة وتنزيل بطاقة الـ QR بفرع الجيزة (كاملة العناوين)
+# 2️⃣ صفحة طباعة بطاقة الـ QR (مضمونة ومبسطة 100%)
 # ==========================================
-elif page == "🖨️ طباعة/تنزيل بطاقة QR (A4)":
-    st.info("💡 اضغط خيار الطباعة بالمتصفح (أو Ctrl + P) لطباعة الورقة الرسمية A4 مباشرة.")
+elif page == "🖨️ طباعة بطاقة الـ QR":
+    st.markdown("<h2 style='text-align: center; color: #10233F;'>🏛️ الأكاديمية المهنية للمعلمين</h2>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #C9A227;'>📍 فرع الجيزة</h3>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #10233F;'>📋 تسجيل حضور المعلمين اليومي</h4>", unsafe_allow_html=True)
     
-    # عرض بطاقة A4 رسمية بمتصفح الويب كاملة مع الخطوط والعناوين
-    st.markdown(f"""
-        <div class="print-a4-card" style="border: 8px solid #10233F; padding: 35px; border-radius: 25px; text-align: center; background-color: #ffffff; margin: 0 auto; max-width: 750px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); direction: rtl; font-family: 'Segoe UI', Tahoma, sans-serif;">
-            
-            <div style="margin-bottom: 20px;">
-                <h1 style="color: #10233F; margin: 0; font-size: 28px; font-weight: bold;">الأكاديمية المهنية للمعلمين</h1>
-                <h2 style="color: #C9A227; margin: 5px 0 0 0; font-size: 26px; font-weight: 900;">📍 فرع الجيزة</h2>
-            </div>
-            
-            <div style="border: 3px solid #C9A227; border-radius: 18px; padding: 15px; background-color: #F8F9FA; margin-bottom: 25px;">
-                <div style="background-color: #10233F; color: #ffffff; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 22px;">
-                    📋 تسجيل حضور المعلمين اليومي
-                </div>
-            </div>
-            
-            <div style="background-color: #ffffff; padding: 20px; border-radius: 20px; display: inline-block; border: 2px dashed #10233F;">
-                <img src="{qr_image_url}" style="width: 350px; height: 350px; display: block; margin: 0 auto;">
-            </div>
-            
-            <div style="color: #444444; font-size: 18px; font-weight: bold; margin-top: 25px;">
-                📲 امسح الرمز بهاتف المعلم للتسجيل المباشر
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    st.divider()
 
-    st.write("")
-    col_dl1, col_dl2, col_dl3 = st.columns([1, 2, 1])
-    with col_dl2:
-        card_bytes = generate_a4_card(app_url, logo_path)
-        st.download_button(
-            label="📥 تنزيل صورة الـ QR لفرع الجيزة (PNG)",
-            data=card_bytes,
-            file_name="Giza_Academy_QR_Card.png",
-            mime="image/png"
-        )
+    col_m1, col_m2, col_m3 = st.columns([1, 2, 1])
+    with col_m2:
+        st.image(qr_image_url, caption="📲 امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
+        st.info("💡 يمكنك استخدام اختصار الطباعة (Ctrl + P) من جهازك لطباعة هذه الورقة مباشرة.")
 
 # ==========================================
 # 3️⃣ صفحة لوحة تحكم الإدارة
