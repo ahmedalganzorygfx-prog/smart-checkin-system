@@ -3,7 +3,7 @@ import io
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import urllib.parse
 
 # 🖼️ 1. تحديد أيقونة التبويب (Favicon)
@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS لضبط RTL والتوسيط المريح
+# 🎨 3. تنسيقات CSS لضبط اتجاه النص RTL والتوسيط المريح
 st.markdown("""
     <style>
     /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
@@ -71,15 +71,6 @@ st.markdown("""
         margin-top: 5px !important;
     }
     
-    .qr-card {
-        background-color: #ffffff;
-        border: 2px dashed #C9A227;
-        border-radius: 15px;
-        padding: 15px;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
     /* توسيط عناوين قسم الإدارة وقائمة الحضور */
     .section-title {
         text-align: center !important;
@@ -102,10 +93,10 @@ def get_egypt_datetime():
     egypt_tz = timezone(timedelta(hours=3))
     return datetime.now(egypt_tz)
 
-# 📲 توليد رابط الـ QR Code ديناميكياً
+# 📲 رابط صورة الـ QR Code من خلال API مجاني
 def get_qr_url(url):
     encoded_url = urllib.parse.quote(url)
-    return f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={encoded_url}&color=10233F"
+    return f"https://api.qrserver.com/v1/create-qr-code/?size=350x350&data={encoded_url}&color=10233F"
 
 # 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 col_left, col_logo, col_right = st.columns([2, 1, 2])
@@ -152,13 +143,14 @@ def load_data():
 
 df_existing = load_data()
 
-# 📌 6. القائمة الجانبية للتنقل وعرض الـ QR
+# 📌 6. القائمة الجانبية للتنقل وعرض رمز الـ QR وزر الطباعة
 st.sidebar.title("📌 القائمة الرئيسية")
-page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
+page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل حضور المعلمين اليومي", "🔒 لوحة تحكم الإدارة"])
 
 st.sidebar.divider()
-st.sidebar.markdown("### 📲 رمز QR الخاص بالفرع")
+st.sidebar.markdown("### 📲 باركود التسجيل بالفرع")
 
+# جلب رابط التطبيق الحقيقي
 try:
     current_host = st.context.headers.get("Host", "smart-checkin-system.streamlit.app")
     app_url = f"https://{current_host}"
@@ -166,45 +158,33 @@ except Exception:
     app_url = "https://smart-checkin-system.streamlit.app"
 
 qr_image_url = get_qr_url(app_url)
-st.sidebar.image(qr_image_url, caption="امسح الرمز بدوران هاتف المعلم للتسجيل", use_container_width=True)
+st.sidebar.image(qr_image_url, caption="امسح الرمز بهاتف المعلم للتسجيل المباشر", use_container_width=True)
 
 # ==========================================
-# 1️⃣ صفحة تسجيل دخول المعلم (بتوقيت مصر)
+# 1️⃣ صفحة تسجيل حضور المعلمين اليومي
 # ==========================================
-if page == "📝 تسجيل دخول معلم":
-    col_main, col_qr_view = st.columns([3, 1])
-    
-    with col_main:
-        st.markdown("""
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #10233F; margin-bottom: 8px;">📝 تسجيل حضور المعلمين بالمقر</h2>
-                <p style="color: #555; font-size: 16px; margin: 0;">أهلاً بك! يُرجى إدخال البيانات التالية لتسجيل حضورك اليوم.</p>
-            </div>
-        """, unsafe_allow_html=True)
+if page == "📝 تسجيل حضور المعلمين اليومي":
+    st.markdown("""
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h2 style="color: #10233F; margin-bottom: 8px;">📝 تسجيل حضور المعلمين اليومي بالمقر</h2>
+            <p style="color: #555; font-size: 16px; margin: 0;">أهلاً بك! يُرجى إدخال البيانات التالية لتسجيل حضورك اليوم.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-        with st.form(key="checkin_form", clear_on_submit=True):
-            teacher_id = st.text_input("كود المعلم / رقم السجل *", placeholder="أدخل كود المعلم الخاص بك")
-            teacher_name = st.text_input("اسم المعلم رباعي *", placeholder="أدخل اسمك رباعياً")
-            national_id = st.text_input("الرقم القومي (إجباري) *", placeholder="أدخل الرقم القومي المكون من 14 رقم", max_chars=14)
+    with st.form(key="checkin_form", clear_on_submit=True):
+        teacher_id = st.text_input("كود المعلم / رقم السجل *", placeholder="أدخل كود المعلم الخاص بك")
+        teacher_name = st.text_input("اسم المعلم رباعي *", placeholder="أدخل اسمك رباعياً")
+        national_id = st.text_input("الرقم القومي (إجباري) *", placeholder="أدخل الرقم القومي المكون من 14 رقم", max_chars=14)
+        
+        col_adm, col_work = st.columns(2)
+        with col_adm:
+            administration = st.text_input("الإدارة التعليمية", placeholder="مثال: إدارة جنوب الجيزة")
+        with col_work:
+            workplace = st.text_input("مكان العمل (المدرسة / الجهة)", placeholder="أدخل اسم المدرسة أو جهة العمل")
             
-            col_adm, col_work = st.columns(2)
-            with col_adm:
-                administration = st.text_input("الإدارة التعليمية", placeholder="مثال: إدارة جنوب الجيزة")
-            with col_work:
-                workplace = st.text_input("مكان العمل (المدرسة / الجهة)", placeholder="أدخل اسم المدرسة أو جهة العمل")
-                
-            mobile_num = st.text_input("رقم الموبايل", placeholder="مثال: 01012345678")
-            
-            submit_button = st.form_submit_button(label="تسجيل الدخول 🚀")
-
-    with col_qr_view:
-        st.markdown("""
-            <div class="qr-card">
-                <h4 style="color: #10233F; margin-top: 0;">📲 باركود الحضور</h4>
-                <p style="font-size: 12px; color: #666;">للتسجيل المباشر من هاتف المعلم</p>
-            </div>
-        """, unsafe_allow_html=True)
-        st.image(qr_image_url, use_container_width=True)
+        mobile_num = st.text_input("رقم الموبايل", placeholder="مثال: 01012345678")
+        
+        submit_button = st.form_submit_button(label="تسجيل الدخول 🚀")
 
     if submit_button:
         if not teacher_id or not teacher_name or not national_id:
@@ -212,7 +192,6 @@ if page == "📝 تسجيل دخول معلم":
         elif len(national_id.strip()) != 14 or not national_id.strip().isdigit():
             st.error("⚠️ يُرجى التأكد من إدخال رقم قومي صحيح مكون من 14 رقماً.")
         else:
-            # 🕒 حساب تاريخ ووقت مصر الحالي بدقة
             now = get_egypt_datetime()
             today_date = now.strftime("%Y-%m-%d")
             current_time = now.strftime("%H:%M:%S")
@@ -249,7 +228,7 @@ if page == "📝 تسجيل دخول معلم":
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (مع فلترة بتوقيت مصر)
+# 2️⃣ صفحة لوحة تحكم الإدارة
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.markdown("<h2 class='section-title'>📊 لوحة تحكم الإدارة - سجل الحضور اليومي</h2>", unsafe_allow_html=True)
