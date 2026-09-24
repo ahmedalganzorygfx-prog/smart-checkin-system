@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 import io
+import os
 
 # ضبط إعدادات الصفحة
 st.set_page_config(
@@ -69,11 +70,14 @@ st.markdown("""
 
 # 🏛️ 2. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
 
-# عرض اللوجو في المنتصف
+# عرض اللوجو في المنتصف مع حماية ضد عدم وجود الملف
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
-    # قم باستبدال اسم الصورة باسم ملف اللوجو لديك مثل: "logo.png"
-    st.image("logo.png", use_container_width=True)
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_container_width=True)
+    else:
+        # عرض أيقونة بديلة محميّة في حالة عدم رفع ملف الشعار على GitHub بعد
+        st.markdown("<h1 style='text-align: center; font-size: 60px; margin: 0;'>🏫</h1>", unsafe_allow_html=True)
 
 # عرض اسم الأكاديمية والفرع بخط كبير وفي المنتصف
 st.markdown("""
