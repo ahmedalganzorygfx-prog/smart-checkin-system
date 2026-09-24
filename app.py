@@ -23,27 +23,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🎨 3. تنسيقات CSS الآمنة لمنع انهيار القائمة الجانبية على الهواتف
+# 🎨 3. تنسيقات CSS
 st.markdown("""
     <style>
-    /* تطبيق اتجاه النص RTL للواجهة الرئيسية فقط بشكل آمن */
     .stMainBlockContainer, [data-testid="stForm"] {
         direction: rtl;
         text-align: right;
     }
     
-    /* محاذاة عناصر الإدخال لليمين */
     .stTextInput input, .stDateInput input {
         text-align: right !important;
         direction: rtl !important;
     }
     
-    /* تنسيق القائمة الجانبية دون الـ RTL القسري لعدم كسر العرض */
     [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
         text-align: right;
     }
     
-    /* توسيط عنصر الهيدر بالكامل */
     .header-box {
         text-align: center !important;
         background-color: #f8f9fa;
@@ -71,7 +67,6 @@ st.markdown("""
         margin-top: 5px !important;
     }
     
-    /* ضبط زر التسجيل */
     .stButton button {
         width: 100%;
         font-weight: bold;
@@ -79,7 +74,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🏛️ 4. العرض العلوي (الشعار واسم الأكاديمية والفرع في المنتصف)
+# 🏛️ 4. العرض العلوي
 col_left, col_logo, col_right = st.columns([2, 1, 2])
 with col_logo:
     if logo_path:
@@ -102,7 +97,7 @@ try:
 except Exception:
     df_existing = pd.DataFrame(columns=["كود المعلم", "اسم المعلم", "الرقم القومي", "تاريخ الدخول", "وقت الدخول"])
 
-# 📌 6. القائمة الجانبية للتنقل
+# 📌 6. القائمة الجانبية
 st.sidebar.title("📌 القائمة الرئيسية")
 page = st.sidebar.radio("اختر الصفحة:", ["📝 تسجيل دخول معلم", "🔒 لوحة تحكم الإدارة"])
 
@@ -151,13 +146,18 @@ if page == "📝 تسجيل دخول معلم":
                 }])
                 
                 updated_df = pd.concat([df_existing, new_data], ignore_index=True)
-                conn.update(data=updated_df)
+                
+                # كتابة البيانات المحسّنة لتجنب UnsupportedOperationError
+                try:
+                    conn.update(worksheet="Sheet1", data=updated_df)
+                except Exception:
+                    conn.create(worksheet="Sheet1", data=updated_df)
                 
                 st.success(f"✅ تم تسجيل دخولك بنجاح يا أستاذ/ة {teacher_name} الساعة {current_time}!")
                 st.balloons()
 
 # ==========================================
-# 2️⃣ صفحة لوحة تحكم الإدارة (محمية)
+# 2️⃣ صفحة لوحة تحكم الإدارة
 # ==========================================
 elif page == "🔒 لوحة تحكم الإدارة":
     st.subheader("📊 لوحة تحكم الإدارة - سجل الحضور اليومي")
